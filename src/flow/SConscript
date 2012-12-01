@@ -1,0 +1,1 @@
+Library('../../lib/flow', Split('flow.c hash_table.c queue.c'), CPPPATH=['../../include'])
