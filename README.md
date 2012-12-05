@@ -21,7 +21,9 @@ chenxm35@gmail.com
 Dependences
 ===========
 
-libpcap, scons, json-c
+libpcap, scons, json-c, 
+
+c-generic-library (http://code.google.com/p/c-generic-library/)
 
 How to Use
 ===========

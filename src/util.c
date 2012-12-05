@@ -14,6 +14,7 @@ void *check_malloc(unsigned long size)
 		printf("Out of memory!\n");
 		exit(1);
 	}
+	
 	return ptr;
 }
 
