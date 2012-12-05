@@ -1,1 +1,0 @@
-Library('../../lib/packet', Split('packet.c queue.c'), CPPPATH=['../../include'])

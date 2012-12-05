@@ -1,1 +1,0 @@
-Library('../../lib/http', Split('http.c'), CPPPATH=['../../include'])

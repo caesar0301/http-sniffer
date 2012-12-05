@@ -2,3 +2,4 @@
 *.dblite
 lib/*
 *.txt
+*.DS_Store
