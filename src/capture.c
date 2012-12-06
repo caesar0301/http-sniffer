@@ -15,60 +15,72 @@
 #include "capture.h"
 #include "packet.h"
 #include "util.h"
+#include "http.h"
+#include "queue.h"
+	 
+static int check_tcp_ports(tcphdr *th);
+static packet_t* packet_preprocess(const char *raw_data, const struct pcap_pkthdr *pkthdr);
 
-static int no_packet = FALSE;	/* for debugging */
-
-BOOL
-capture_finished(void)
-{
-	return no_packet;
+int CaptureProcessPacket(const char *raw_data, const pcap_pkthdr *pkthdr, Queue *packet_queue){
+	packet_t *new_packet = packet_preprocess(raw_data, pkthdr);
+	if(new_packet == NULL)
+		return (-1);
+	queue_push(packet_queue, new_packet);
+	return 0;
 }
 
+static int check_tcp_ports(tcphdr *th){
+	// Only standard HTTP, HTTPS and common proxy ports are listened
+	int parr = [80, 8080, 3128, 443]
+	for(int i=0; i<4, i++){
+		if(th->th_dport == parr[i] || th->th_sport == parr[i])
+			return 0;
+	}
+	return -1;
+}
+
+	
 /* Parse packets' header information and return a packet_t object */
-packet_t*
-packet_preprocess(const char *raw_data, const struct pcap_pkthdr *pkthdr)
+static packet_t* packet_preprocess(const char *raw_data, const struct pcap_pkthdr *pkthdr)
 {
-	packet_t	*pkt = NULL;	/* new packet */
 	char 	*cp = raw_data;
 	ethhdr	*eth_hdr = NULL;
 	iphdr	*ip_hdr = NULL;
 	tcphdr	*tcp_hdr = NULL;
+	packet_t	*pkt = NULL;	/* new packet */
 
 	/* Parse libpcap packet header */
-	pkt = packet_new();
+	pkt = PacketNew();
 	pkt->cap_sec = pkthdr->ts.tv_sec;
 	pkt->cap_usec = pkthdr->ts.tv_usec;
 	pkt->raw_len = pkthdr->caplen;
 
 	/* Parse ethernet header */
-	eth_hdr = packet_parse_ethhdr(cp);
-	/* Is IP...? */
-	if(eth_hdr->ether_type != 0x0800){
-		free_ethhdr(eth_hdr);
-		packet_free(pkt);
+	eth_hdr = PacketParseEthhdr(cp);
+	if(eth_hdr->ether_type != 0x0800){	//Only IP packet is processed
+		PacketEthhdrFree(eth_hdr);
+		PacketFree(pkt);
 		return NULL;
 	}
 
 	/* Parse IP header */
-	cp = cp+sizeof(ethhdr);
-	ip_hdr = packet_parse_iphdr(cp);
+	cp = cp + sizeof(ethhdr);
+	ip_hdr = PacketParseIPhdr(cp);
 	pkt->saddr = ip_hdr->saddr;
 	pkt->daddr = ip_hdr->daddr;
 	pkt->ip_hl = (ip_hdr->ihl) << 2;	/* bytes */
 	pkt->ip_tol = ip_hdr->tot_len;
 	pkt->ip_pro = ip_hdr->protocol;
-
-	/* Is TCP...? */
-	if(pkt->ip_pro != 0x06){
-		free_ethhdr(eth_hdr);
-		free_iphdr(ip_hdr);
-		packet_free(pkt);
+	if(pkt->ip_pro != 0x06){		//Only TCP packet is processed
+		PacketEthhdrFree(eth_hdr);
+		PacketIPhdrFree(ip_hdr);
+		PacketFree(pkt);
 		return NULL;
 	}
 
 	/* Parse TCP header */
 	cp = cp + pkt->ip_hl;
-	tcp_hdr = packet_parse_tcphdr(cp);
+	tcp_hdr = PacketParseTCPhdr(cp);
 	pkt->sport = tcp_hdr->th_sport;
 	pkt->dport = tcp_hdr->th_dport;
 	pkt->tcp_seq = tcp_hdr->th_seq;
@@ -76,129 +88,60 @@ packet_preprocess(const char *raw_data, const struct pcap_pkthdr *pkthdr)
 	pkt->tcp_flags = tcp_hdr->th_flags;
 	pkt->tcp_win = tcp_hdr->th_win;
 	pkt->tcp_hl = tcp_hdr->th_off << 2;		/* bytes */
-	pkt->tcp_dl = pkt->ip_tol - pkt->ip_hl - pkt->tcp_hl;
-	pkt->http = 0; /* default */
-
-	/* Check the TCP ports to identify if the packet carries HTTP data
-	   We only consider normal HTTP traffic without encryption */
-	if( !(tcp_hdr->th_sport == 80 || tcp_hdr->th_dport == 80 || \
-		tcp_hdr->th_sport == 8080 || tcp_hdr->th_dport == 8080 || \
-		tcp_hdr->th_sport == 8000 || tcp_hdr->th_dport == 8000)){
-		free_ethhdr(eth_hdr);
-		free_iphdr(ip_hdr);
-		free_tcphdr(tcp_hdr);
-		packet_free(pkt);
+	pkt->tcp_odl = pkt->ip_tol - pkt->ip_hl - pkt->tcp_hl;
+	pkt->http = 0x00; 						/* default */
+	if( check_tcp_ports(tcp_hdr) != 0 ){
+		PacketEthhdrFree(eth_hdr);
+		PacketIPhdrFree(ip_hdr);
+		PacketTCPhdrFree(tcp_hdr);
+		PacketFree(pkt);
 		return NULL;
 	}
 
-	/* Process packets of flows which carry HTTP traffic */
-	if(pkt->tcp_dl != 0)
-	{
+	/* Process packets which carry HTTP traffic */
+	if(pkt->tcp_odl != 0){
+		char *http_head_end;
 		cp = cp + pkt->tcp_hl;
-		if( !IsHttpPacket(cp, pkt->tcp_dl) )
-		{
-			/* If the packet is not HTTP, we erase the payload. */
+		int res = HttpMessageType(cp, pkt->tcp_odl, &http_head_end);
+		if( res == 0x00 ){
+			/* If the packet is not HTTP, we erase the payload to save memory space */
 			pkt->tcp_odata = NULL;
-			pkt->tcp_data = pkt->tcp_odata;
-		}
-		else
-		{
-			/* Yes, it's HTTP packet */
-			char *head_end = NULL;
+		}else{
 			int hdl = 0;
-			head_end = IsRequest(cp, pkt->tcp_dl);
-			if( head_end != NULL )
-			{
-				/* First packet of request. */
+			if(res == 0x01){
+				pkt->http = res;
+				hdl = http_head_end - cp + 1;
+				pkt->tcp_sdl = hdl;
+				//*******************************
+				// Extract HTTP message
+				pkt->http_request = HTTPReqNew();
+				HTTPParseReq(pkt->http_request, cp, http_head_end);
+				//*******************************
+			}else if(res == 0x10){
+				pkt->http = res;
 				hdl = head_end - cp + 1;
-				pkt->http = HTTP_REQ;
-				/* Fake TCP data length with only HTTP header. */
-				pkt->tcp_dl = hdl;
+				pkt->tcp_sdl = hdl;
+				//*******************************
+				// Extract HTTP message
+				pkt->http_response = HTTPRspNew();
+				HTTPParseReq(pkt->http_response, cp, http_head_end);
+				//*******************************
+			}else{
+				printf("Invalid HTTP message type.\n");
+				exit(-1);	
 			}
 
-			head_end = IsResponse(cp, pkt->tcp_dl);
-			if( head_end != NULL )
-			{
-				/* First packet of response. */
-				hdl = head_end - cp + 1;
-				pkt->http = HTTP_RSP;
-				/* Fake TCP data length with only HTTP header. */
-				pkt->tcp_dl = hdl;
-			}
+			
 			/* Allocate memory to store HTTP header. */
-			pkt->tcp_odata = MALLOC(char, pkt->tcp_dl + 1);
-			pkt->tcp_data = pkt->tcp_odata;
-			memset(pkt->tcp_odata, 0, pkt->tcp_dl + 1);
-			memcpy(pkt->tcp_odata, cp, pkt->tcp_dl);
+			int tcp_stored_len = pkt->tcp_sdl + 1;
+			pkt->tcp_odata = MALLOC(char, tcp_stored_len);
+			memset(pkt->tcp_odata, 0, tcp_stored_len);
+			memcpy(pkt->tcp_odata, cp, tcp_stored_len);
 		}
-	}
-	else
-	{
+	}else
 		pkt->tcp_odata = NULL;
-		pkt->tcp_data = pkt->tcp_odata;
-	}
-	free_ethhdr(eth_hdr);
-	free_iphdr(ip_hdr);
-	free_tcphdr(tcp_hdr);
+	PacketEthhdrFree(eth_hdr);
+	PacketIPhdrFree(ip_hdr);
+	PacketTCPhdrFree(tcp_hdr);
 	return pkt;
-}
-
-/* Capture main function. */
-int 
-capture_main(const char* interface, void (*pkt_handler)(void*))
-{
-	char errbuf[PCAP_ERRBUF_SIZE];
-	memset(errbuf, 0, PCAP_ERRBUF_SIZE);
-	char *raw = NULL;
-	pcap_t *cap = NULL;
-	struct pcap_pkthdr pkthdr;
-	packet_t *packet = NULL;
-	
-	cap = pcap_open_live(interface, 65535, 0, 1000, errbuf);
-	if( cap == NULL){
-		printf("%s\n",errbuf);
-		exit(1);
-	}
-	while(1){
-		raw = pcap_next(cap, &pkthdr);
-		if( raw == NULL){
-			continue;
-		}
-		packet = packet_preprocess(raw, &pkthdr);
-		if( NULL == packet ){
-			continue;
-		}
-		pkt_handler(packet);
-	}
-	return 0;
-}
-
-/* Read packets from pcap trace */
-int 
-capture_offline(const char* filename, void (*pkt_handler)(void*))
-{
-	char errbuf[PCAP_ERRBUF_SIZE];
-	memset(errbuf, 0, PCAP_ERRBUF_SIZE);
-	char *raw = NULL;
-	pcap_t *cap = NULL;
-	struct pcap_pkthdr pkthdr;
-	packet_t *packet = NULL;
-	
-	cap = pcap_open_offline(filename, errbuf);
-	if( cap == NULL){
-		printf("%s\n",errbuf);
-		exit(1);
-	}
-	while(1){
-		raw = pcap_next(cap, &pkthdr);
-		if( raw == NULL){
-			continue;
-		}
-		packet = packet_preprocess(raw, &pkthdr);
-		if( NULL == packet ){
-			continue;
-		}
-		pkt_handler(packet);
-	}
-	return 0;
 }

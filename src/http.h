@@ -300,19 +300,15 @@ struct _http_pair_t
 	http_pair_t	*next;
 };
 
-
-char *IsRequest(const char *p, const int datalen);			/* If the packet is carrying HTTP request data */
-char *IsResponse(const char *p, const int datalen);			/* If the packet is carrying HTTP response data */
-u_int8_t IsHttpPacket(const char *p, const int datalen);	/* If the packet is carrying HTTP(request or response) data */
-
+u_int8_t HttpMessageType(const char *p, const int datalen, const char **hdend);	/* If the packet is carrying HTTP(request or response) data */
 http_pair_t *HTTPPairNew(void);					/* Create a new http_pair_t object */
 request_t *HTTPReqNew(void);					/* Create a new request_t object */
 response_t *HTTPRspNew(void);					/* Create a new response_t object */
 void HTTPReqFree(request_t *req);				/* Free a request_t object */
 void HTTPRspFree(response_t *rsp);				/* Free a response_t object */
 void HTTPPairFree(http_pair_t *h);				/* Free a http_pair_t object */
-int HTTPReqAdd(http_pair_t *h, request_t *req);	/* Add a request_t object to http_pair_t request chain */
-int HTTPRspAdd(http_pair_t *h, response_t *rsp);		/* Add a response_t object to http_pair_t response chain */
+int HTTPReqAdd(http_pair_t *h, request_t *req);										/* Add a request_t object to http_pair_t request chain */
+int HTTPRspAdd(http_pair_t *h, response_t *rsp);									/* Add a response_t object to http_pair_t response chain */
 int HTTPParseReq(request_t *request, const char *data, const char *dataend);		/* Parse the packet and store in a request_t object */
 int HTTPParseRsp(response_t *response, const char *data, const char *dataend);		/* Parse the packet and store in a response_t object */
 

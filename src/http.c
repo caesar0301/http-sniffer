@@ -15,7 +15,9 @@
 
 extern http_st_code HTTP_STATUS_CODE_ARRAY[];
 extern char *HTTP_METHOD_STRING_ARRAY[];
-	 
+
+static char* is_http_request(const char *ptr, const int datalen);
+static char* is_http_response(const char *ptr, const int datalen);
 static char* find_line_end(const char *data, const char *dataend, const char **eol);
 static int get_token_len(const char *linep, const char *lineend, const char **next_token);
 static char* find_header_end(const char *data, const char *dataend, int *line_cnt);
@@ -25,61 +27,24 @@ static http_ver http_request_version(const char *line, int len);
 static http_ver http_response_version(const char *line, int len);
 static http_status http_response_status(const char *line, int len);
 
-/*
- * To identify if the packet is carrying HTTP request message.
- * If it's true, the head end char pointer will be returned, else NULL.
- */
-char* IsRequest(const char *ptr, const int datalen)
+
+u_int8_t HttpMessageType(const char *p, const int datalen, const char **hdend)
 {
-	http_mthd method = HTTP_MT_NONE;
-	char *head_end = NULL;
-
-	method = http_request_method(ptr, datalen);
-	if (method == HTTP_MT_NONE){
-		return NULL;
+	char *req_head_end = is_http_request(ptr, datalen);
+	if(req_head_end != NULL){
+		*hdend = req_head_end;
+		return 0x01;	//request
 	}
-	else{
-		int line_cnt = 0;
-		head_end = find_header_end(ptr, (ptr+datalen-1), &line_cnt);
-		return head_end;
-	}
-}
-/*
- * To identify if the packet is carrying HTTP response message.
- * If it's true, the head end char pointer will be returned, else NULL.
- */
-char* IsResponse(const char *ptr, const int datalen)
-{
-	http_ver version = HTTP_VER_NONE;
-	char *head_end = NULL;
-
-	if (datalen < 8){
-		return NULL;
+	
+	char *rsp_head_end = is_http_response(ptr, datalen);
+	if (rsp_head_end != NULL){
+		*hdend = rsp_head_end;
+		return 0x10;	//response
 	}
 
-	version = http_response_version(ptr, datalen);
-	if (version == HTTP_VER_NONE){
-		return NULL;
+	*hdend = NULL;
+	return 0x00;		//non-http
 	}
-	else{
-		int line_cnt = 0;
-		head_end = find_header_end(ptr, (ptr+datalen-1), &line_cnt);
-		return head_end;
-	}
-}
-
-u_int8_t IsHttpPacket(const char *p, const int datalen)
-{
-	char *req_head_end = NULL;
-	char *rsp_head_end = NULL;
-
-	req_head_end = IsRequest(ptr, datalen);
-	rsp_head_end = IsResponse(ptr, datalen);
-
-	if ( (req_head_end != NULL) || (rsp_head_end != NULL)){
-		return TRUE;
-	}
-	return FALSE;
 }
 
 http_pair_t *HTTPPairNew(void)
@@ -260,6 +225,48 @@ int HTTPParseRsp(response_t *response, const char *data, const char *dataend)
 	response->location = http_header_param(data, hdl, "Location:");
 
 	return 0;
+}
+
+
+/*
+ * To identify if the packet is carrying HTTP request message.
+ * If it's true, the head end char pointer will be returned, else NULL.
+ */
+static char* is_http_request(const char *ptr, const int datalen)
+{
+	http_mthd method = HTTP_MT_NONE;
+	char *head_end = NULL;
+
+	method = http_request_method(ptr, datalen);
+	if (method == HTTP_MT_NONE){
+		return NULL;
+	}
+	else{
+		int line_cnt = 0;
+		head_end = find_header_end(ptr, (ptr+datalen-1), &line_cnt);
+		return head_end;
+	}
+}
+/*
+ * To identify if the packet is carrying HTTP response message.
+ * If it's true, the head end char pointer will be returned, else NULL.
+ */
+static char* is_http_response(const char *ptr, const int datalen)
+{
+	http_ver version = HTTP_VER_NONE;
+	char *head_end = NULL;
+
+	if (datalen < 8)
+		return NULL;
+
+	version = http_response_version(ptr, datalen);
+	if (version == HTTP_VER_NONE)
+		return NULL;
+	else{
+		int line_cnt = 0;
+		head_end = find_header_end(ptr, (ptr+datalen-1), &line_cnt);
+		return head_end;
+	}
 }
 
 

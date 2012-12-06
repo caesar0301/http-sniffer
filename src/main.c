@@ -2,83 +2,190 @@
  * Main.c
  */
 #include <stdio.h>
-#include <pthread.h>
 #include <time.h>
-#include <assert.h>
 #include <unistd.h>		/* getopt() */
 
+#include "pcap.h"
+#include "queue.h"
 #include "capture.h"
-#include "jobs.h"
-#include "packet.h"
 
-void
-print_usage(const char* pro_name)
+// Stop signs for program 
+static long limit_pktcnt = -1;
+static long limit_filesize = -1;
+static long limit_seconds = -1;
+static long var_pktcnt = 0;
+static long var_filesize = 0;
+static long var_seconds = 0;
+static time_t t_start, t_now;
+
+static void print_usage(const char* pro_name)
 {
-	printf("Usage: %s -i interface [-o dumpfile]\n", pro_name);
-	printf("    or %s -f tracefile [-o dumpfile]\n", pro_name);
+	printf("This program is to sniff the HTTP messages from packets.\n");
+	printf("Usage: %s [-h] [-c count] [-C file_size] [-G seconds]\n", pro_name);
+	printf("          [-i interface | -f file | -d directory]\n");
+	printf("          [-w file]\n\n");
+	printf("      -h	print this message\n");
+	printf("      -c	maximum packets sniffed\n");
+	printf("      -C	(Bytes) maximum output file size; new files will be created with -w value plus integer number\n");
+	printf("      -G	maximum seconds to sniff\n");
+	printf("      -i	interface from which to sniff live packets\n");
+	printf("      -f	filename of single pcap file\n");
+	printf("      -d	directory of pcap files\n");
+	printf("      -w	output file name\n");
+}
+
+// Check time and pakcet count limitations
+static int check_time_count(void){
+	time(&t_now);
+	var_seconds = (int)t_now-t_start;
+	if(limit_pktcnt != -1 && var_pktcnt>=limit_pktcnt){
+		return -1;
+	}else if(limit_seconds != -1 && var_seconds>=limit_seconds){
+		return -1;
+	}else{
+		return 0;
+	}
+}
+
+static int check_filesize(void){
+	if (limit_filesize == -1 || var_filesize <= limit_filesize)
+		return 0;
+	else
+		return -1;
+}
+
+static int process_packet(const char **pkt, char **packetinfo, int *packetinfosize){
+	*packetinfo = "one packet processed\n";
+	*packetinfosize = strlen(*packetinfo);
+	return 0;
 }
 
 int main(int argc, char *argv[]){
 	char* interface = NULL;
-	char* dumpfile = NULL;
-	char* tracefile = NULL;
+	char* outputfile = NULL;
+	char* inputfile = NULL;
+	char* inputdir = NULL;
 	int opt;
-	while((opt = getopt(argc, argv, ":i:f:o:h")) != -1)
+	while((opt = getopt(argc, argv, "c:C:G:i:f:d:w:h")) != -1)
 	{
 		switch(opt)
 		{
 			case 'h':
 				print_usage(argv[0]);
-				return (1);
+				return 0;
+			case 'c':
+				limit_pktcnt = atoi(optarg);
+				break;
+			case 'C':
+				limit_filesize = atoi(optarg);
+				break;
+			case 'G':
+				limit_seconds = atoi(optarg);
+				break;
 			case 'i':
 				interface = optarg;
 				break;
-			case 'o':
-				dumpfile = optarg;
-				break;
 			case 'f':
-				tracefile = optarg;
+				inputfile = optarg;
 				break;
-			default:	/* '?' */
+			case 'd':
+				inputdir = optarg;
+				break;
+			case 'w':
+				outputfile = optarg;
+				break;
+			default:
 				print_usage(argv[0]);
-				return (1);
+				return 0;
 		}
 	}
-	if (interface == NULL && tracefile == NULL)
-	{
+	
+	if (interface == NULL && inputfile == NULL && inputdir == NULL){
 		print_usage(argv[0]);
-		return (1);
+		exit(-1);
 	}
 
-	time_t start, end;
-	time(&start);
-	printf("Working from: %s\n", ctime(&start));
-	
-	pthread_t j_pkt_q;
-	pthread_t j_flow_q;
-	pthread_t j_scrb_htbl;
-	pthread_t j_debug_p;
-	void *thread_result;
-	packet_queue_init();	/* Initialize packet queue */
-	flow_init();			/* Initialize flow queue and hashtable */
-	pthread_create(&j_pkt_q, NULL, (void*)process_packet_queue, NULL);
-	pthread_create(&j_debug_p, NULL, (void*)debugging_print, NULL);
-	pthread_create(&j_flow_q, NULL, (void*)process_flow_queue, dumpfile);
-	pthread_create(&j_scrb_htbl, NULL, (void*)scrubbing_flow_htbl, NULL);
-	
-	if (interface != NULL){
-		capture_main(interface, packet_queue_enq);
-	}else	//tracefile != NULL
-	{
-		capture_offline(tracefile, packet_queue_enq);
-	}
+	time(&t_start);		//Mark start time
 
-	pthread_join(j_pkt_q, &thread_result);
-	pthread_join(j_debug_p, &thread_result);
-	pthread_join(j_flow_q, &thread_result);
-	pthread_join(j_scrb_htbl, &thread_result);
+	//Prepare pcap handler
+	pcap_t *cap;
+	char errbuf[PCAP_ERRBUF_SIZE];
+	memset(errbuf, 0, PCAP_ERRBUF_SIZE);
+	if (NULL != inputfile){
+		cap = pcap_open_offline(inputfile, errbuf);
+		if( cap == NULL){
+			printf("%s\n", errbuf);
+			exit(-1);
+		}
+	}else if(NULL != interface){
+		cap = pcap_open_live(interface, 65535, 0, 1000, errbuf);
+		if( cap == NULL){
+			printf("%s\n", errbuf);
+			exit(-1);
+		}
+	}
 	
-	time(&end);
-	printf("time elapsed is %d s\n", (int)(end - start));
+	//Prepare output filenames and file counter
+	FILE* outputstream;
+	char fname[128];
+	int file_cnt = 0;
+	if(NULL != outputfile){
+		strcpy(fname, outputfile);
+		outputstream = fopen(fname, "wb");
+	}else{
+		strcpy(fname, "stdout");
+		outputstream = stdout;
+	}
+	file_cnt++;
+	
+	//Prepare Queues: packet queue and flow queue
+	Queue packet_queue, flow_queue;
+	queue_init(&packet_queue);
+	queue_init(&flow_queue);
+	
+	//Do the packet processing work
+	int res = 0;
+	struct pcap_pkthdr *pkthdr = NULL;
+	char *raw = NULL;
+	char *packetinfo = NULL;
+	int packetinfosize = 0;
+	while(0 == check_time_count()){
+		res = pcap_next_ex(cap, &pkthdr, &raw);
+		if( -1 == res){
+			//an error occurred while reading the packet
+			continue;
+		}else if(0 == res){
+			//packets are being read from a live capture, and the timeout expired
+			continue;
+		}else if(-2 == res){
+			printf("Packets are being read from a 'savefile', and there are no more packets to read from the savefile\n");
+			return (-1);
+		}else{
+			CaptureProcessPacket(raw, pkthdr, &packet_queue);
+			printf("Queue size: %d\n", queue_size(&packet_queue));
+			// process_packet(&raw, &packetinfo, &packetinfosize);
+			// if(NULL == packetinfo)
+			// 	continue;
+			// var_pktcnt++;	// valid packets processed
+			// 
+			// if(outputstream == stdout){
+			// 	printf("stdout message: %s\n", packetinfo);
+			// }else{
+			// 	var_filesize += packetinfosize;
+			// 	if (check_filesize() == 0)
+			// 		fwrite(packetinfo, sizeof(char), packetinfosize, outputstream);
+			// 	else{
+			// 		fflush(outputstream);
+			// 		fclose(outputstream);
+			// 		sprintf(fname, "%s.%d", outputfile, ++file_cnt);
+			// 		outputstream = fopen(fname, "wb");
+			// 		fwrite(packetinfo, sizeof(char), packetinfosize, outputstream);
+			// 		var_filesize = packetinfosize;
+			// 	}
+			// }
+		}	
+	}
+	
+	printf("%d packets captured, time elapsed %d seconds\n", var_pktcnt, var_seconds);
 	return 0;
 }

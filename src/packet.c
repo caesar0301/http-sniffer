@@ -22,22 +22,17 @@ packet_t *PacketNew(void)
 	pkt = MALLOC(packet_t, 1);
 	memset(pkt, 0, sizeof(packet_t));
 	pkt->tcp_odata = NULL;
-	pkt->tcp_data = pkt->tcp_odata;
-	pkt->next = NULL;
+	pkt->tcp_sdata = pkt->tcp_odata;
 	return pkt;
 }
 
 /*
  * Free a memory block allocated to a packet_t object
  */
-void PacketFree(packet_t *pkt)
-{
-	if(pkt != NULL)
-	{
+void PacketFree(packet_t *pkt){
+	if(pkt != NULL){
 		if(pkt->tcp_odata != NULL)
-		{
 			free(pkt->tcp_odata);
-		}
 		free(pkt);
 	}
 }
@@ -45,8 +40,7 @@ void PacketFree(packet_t *pkt)
 /*
  * Parse the ethernet header with little endian format
  */
-ethhdr *PacketParseEthhdr(const char *p)
-{
+ethhdr *PacketParseEthhdr(const char *p){
 	ethhdr *hdr, *tmp;
 	tmp = p;
 	hdr = MALLOC(ethhdr, 1);
@@ -102,20 +96,14 @@ tcphdr *PacketParseTCPhdr(const char *p)
 	return hdr;
 }
 
-/* Free the ethernet header */
-void EthhdrFree(ethhdr *h)
-{
+void PacketEthhdrFree(ethhdr *h){
 	free(h);
 }
 
-/* Free the IP header */
-void IPhdrFree(iphdr *h)
-{
+void PacketIPhdrFree(iphdr *h){
 	free(h);
 }
 
-/* Free the TCP header */
-void TCPhdrFree(tcphdr *h)
-{
+void PacketTCPhdrFree(tcphdr *h){
 	free(h);
 }

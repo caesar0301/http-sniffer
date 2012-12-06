@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+#include "http.h"
+
 /* Ethernet header structure */
 typedef struct ethernet_header ethhdr;
 struct ethernet_header
@@ -66,7 +68,7 @@ struct tcp_header
 	u_int16_t th_urp;		/* Urgent pointer */
 };
 
-/* Basic packet structure of this program */
+/* Self-defined packet structure of this program */
 typedef struct _packet_t packet_t;
 struct _packet_t 
 {
@@ -86,24 +88,23 @@ struct _packet_t
 	u_int8_t 	tcp_flags;	/* TCP flags */
 	u_int16_t 	tcp_win;	/* TCP window size */
 	u_int8_t 	tcp_hl;		/* Bytes: TCP header length */
-	u_int16_t	tcp_dl;		/* Bytes: TCP payload length */
-#define HTTP_REQ	0x01
-#define HTTP_RSP	0x10
-	u_int8_t	http;		/* is_http or is_request or is_response */
+	u_int16_t	tcp_odl;	/* Bytes: original TCP payload length */
+	u_int16_t	tcp_sdl;	/* Bytes: stored TCP payload length */
 	char		*tcp_odata;	/* Orignal TCP payload */
-	char		*tcp_data;	/* Real useful data */
-	packet_t	*next;		/* Next packet in packet queue */
+	u_int8_t	http;		/* 0x00: not http, 0x01: is_request, 0x10: is_response */
+	request_t	http_request;
+	response_t	http_response;
 };
 
 /* Basic functions of packets */
-packet_t *PacketNew(void);						/* Produce a new packet object */
+packet_t *PacketNew(void);					/* Produce a new packet object */
 void PacketFree(packet_t *pkt);				/* Free a packet object */
-ethhdr *PacketParseEthhdr(const char *p);		/* Parse the Ethernet part of packet header */
+ethhdr *PacketParseEthhdr(const char *p);	/* Parse the Ethernet part of packet header */
 iphdr *PacketParseIPhdr(const char *p);		/* Parse the IP part of packet header */
-tcphdr *PacketParseTCPhdr(const char *p);		/* Parse the TCP part of packet header */
-void EthhdrFree(ethhdr *h);					/* Free a Ethernet header object */
-void IPhdrFree(iphdr *h);					/* Free a IP header object */
-void TCPhdrFree(tcphdr *h);					/* Free a TCP header object */
+tcphdr *PacketParseTCPhdr(const char *p);	/* Parse the TCP part of packet header */
+void PacketEthhdrFree(ethhdr *h);			/* Free a Ethernet header object */
+void PacketIPhdrFree(iphdr *h);				/* Free a IP header object */
+void PacketTCPhdrFree(tcphdr *h);			/* Free a TCP header object */
 
 
 #endif /* __PACKET_H__ */
