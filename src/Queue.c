@@ -15,7 +15,7 @@
 */
 
 #include <stdlib.h>
-#include "Queue.h"
+#include "queue.h"
 
 void queue_init(Queue *q)
 {
