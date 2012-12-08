@@ -17,8 +17,8 @@
 ** Last compiled under Linux with gcc-3
 */
 
-#ifndef _RZ_C_QUEUE_
-#define _RZ_C_QUEUE_
+#ifndef __QUEUE_H__
+#define __QUEUE_H__
 
 typedef struct _QueueNode {
     void *data;
@@ -34,29 +34,33 @@ typedef struct _Queue {
 /*****
 ** initialize an empty Queue
 ** must be called first after a new Queue is declared
-*/ void queue_init(Queue *q);
+*/ void QueueInit(Queue *q);
 
 /*****
 ** push a new element to the end of the Queue
 ** it's up to the client code to allocate and maintain memory of "element"
-*/ void queue_push(Queue *q, void *element);
+*/ void QueuePush(Queue *q, void *element);
 
 /*****
 ** return the first element in the Queue, or NULL when the Queue is empty
-*/ void *queue_front(Queue *q);
+*/ void *QueueFront(Queue *q);
 
+/*****
+** return the last element in the Queue, or NULL when the Queue is empty
+*/ void *QueueTail(Queue *q);
+		
 /*****
 ** remove the first element (pointer) from the Queue
 ** set "release" to non-zero if memory deallocation is desired
-*/ void queue_pop(Queue *q, int release);
+*/ void QueuePop(Queue *q, int release);
 
 /*****
 ** remove all elements (pointers) from the Queue
 ** set "release" to non-zero if memory deallocation is desired
-*/ void queue_clear(Queue *q, int release);
+*/ void QueueClear(Queue *q, int release);
 
 /*****
 ** return current number of elements in the Queue, or 0 when Queue is empty
-*/ int queue_size(Queue *q);
+*/ int QueueSize(Queue *q);
 
-#endif /* _RZ_C_QUEUE_ */
+#endif /* __QUEUE_H__ */

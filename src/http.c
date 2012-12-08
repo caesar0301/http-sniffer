@@ -11,10 +11,8 @@
 #include <assert.h>
 
 #include "http.h"
+#include "packet.h"
 #include "util.h"
-
-extern http_st_code HTTP_STATUS_CODE_ARRAY[];
-extern char *HTTP_METHOD_STRING_ARRAY[];
 
 static char* is_http_request(const char *ptr, const int datalen);
 static char* is_http_response(const char *ptr, const int datalen);
@@ -26,118 +24,208 @@ static char* http_request_uri(const char *line, int len);
 static http_ver http_request_version(const char *line, int len);
 static http_ver http_response_version(const char *line, int len);
 static http_status http_response_status(const char *line, int len);
+static char* http_header_param(const char *header, int hlen, const char *param);
 
+extern http_st_code HTTP_STATUS_CODE_ARRAY[] = {
+    {100, HTTP_ST_100},
+    {101, HTTP_ST_101},
+    {102, HTTP_ST_102},
+    {199, HTTP_ST_199},
 
-u_int8_t HttpMessageType(const char *p, const int datalen, const char **hdend)
-{
+    {200, HTTP_ST_200},
+    {201, HTTP_ST_201},
+    {202, HTTP_ST_202},
+    {203, HTTP_ST_203},
+    {204, HTTP_ST_204},
+    {205, HTTP_ST_205},
+    {206, HTTP_ST_206},
+    {207, HTTP_ST_207},
+    {299, HTTP_ST_299},
+
+    {300, HTTP_ST_300},
+    {301, HTTP_ST_301},
+    {302, HTTP_ST_302},
+    {303, HTTP_ST_303},
+    {304, HTTP_ST_304},
+    {305, HTTP_ST_305},
+    {307, HTTP_ST_307},
+    {399, HTTP_ST_399},
+
+    {400, HTTP_ST_400},
+    {401, HTTP_ST_401},
+    {402, HTTP_ST_402},
+    {403, HTTP_ST_403},
+    {404, HTTP_ST_404},
+    {405, HTTP_ST_405},
+    {406, HTTP_ST_406},
+    {407, HTTP_ST_407},
+    {408, HTTP_ST_408},
+    {409, HTTP_ST_409},
+    {410, HTTP_ST_410},
+    {411, HTTP_ST_411},
+    {412, HTTP_ST_412},
+    {413, HTTP_ST_413},
+    {414, HTTP_ST_414},
+    {415, HTTP_ST_415},
+    {416, HTTP_ST_416},
+    {417, HTTP_ST_417},
+    {422, HTTP_ST_422},
+    {423, HTTP_ST_423},
+    {424, HTTP_ST_424},
+    {499, HTTP_ST_499},
+
+    {500, HTTP_ST_500},
+    {501, HTTP_ST_501},
+    {502, HTTP_ST_502},
+    {503, HTTP_ST_503},
+    {504, HTTP_ST_504},
+    {505, HTTP_ST_505},
+    {507, HTTP_ST_507},
+    {599, HTTP_ST_599}
+};
+
+extern char *HTTP_METHOD_STRING_ARRAY[] = {
+    "OPTIONS",
+    "GET",
+    "HEAD",
+    "POST",
+    "PUT",
+    "DELETE",
+    "TRACE",
+    "CONNECT",
+    "PATCH",
+    "LINK",
+    "UNLINK",
+    "PROPFIND",
+    "MKCOL",
+    "COPY",
+    "MOVE",
+    "LOCK",
+    "UNLOCK",
+    "POLL",
+    "BCOPY",
+    "BMOVE",
+    "SEARCH",
+    "BDELETE",
+    "PROPPATCH",
+    "BPROPFIND",
+    "BPROPPATCH",
+    "LABEL",
+    "MERGE",
+    "REPORT",
+    "UPDATE",
+    "CHECKIN",
+    "CHECKOUT",
+    "UNCHECKOUT",
+    "MKACTIVITY",
+    "MKWORKSPACE",
+    "VERSION-CONTROL",
+    "BASELINE-CONTROL",
+    "NOTIFY",
+    "SUBSCRIBE",
+    "UNSUBSCRIBE",
+    "ICY",
+    "NONE"
+};
+
+u_int8_t HttpMessageType(const char *p, const int datalen, const char **hdend){
+	char *ptr = p;
 	char *req_head_end = is_http_request(ptr, datalen);
 	if(req_head_end != NULL){
 		*hdend = req_head_end;
-		return 0x01;	//request
+		return PACKET_CARRY_HTTP_REQUEST;	//request
 	}
 	
 	char *rsp_head_end = is_http_response(ptr, datalen);
 	if (rsp_head_end != NULL){
 		*hdend = rsp_head_end;
-		return 0x10;	//response
+		return PACKET_CARRY_HTTP_RESPONSE;	//response
 	}
 
 	*hdend = NULL;
-	return 0x00;		//non-http
-	}
+	return PACKET_NOT_CARRY_HTTP;		//non-http
 }
 
-http_pair_t *HTTPPairNew(void)
-{
+http_pair_t *HTTPPairNew(void){
 	http_pair_t	*h = NULL;
 	h = MALLOC(http_pair_t, 1);
 	memset(h, 0, sizeof(http_pair_t));
 	return h;
 }
 
-request_t *HTTPReqNew(void)
-{
+request_t *HTTPReqNew(void){
 	request_t *r = NULL;
 	r = MALLOC(request_t, 1);
 	memset(r, 0, sizeof(request_t));
 	return r;
 }
 
-response_t *HTTPRspNew(void)
-{
+response_t *HTTPRspNew(void){
 	response_t *r = NULL;
 	r = MALLOC(response_t, 1);
 	memset(r, 0, sizeof(response_t));
 	return r;
 }
 
-void HTTPReqFree(request_t *req)
-{
-	if(r->host != NULL)
-		free(r->host);
-	if(r->uri != NULL)
-		free(r->uri);
-	if(r->user_agent != NULL)
-		free(r->user_agent);
-	if(r->referer != NULL)
-		free(r->referer);
-	if(r->content_type != NULL)
-		free(r->content_type);
-	if(r->content_encoding != NULL)
-		free(r->content_encoding);
-	free(r);
-}
-
-void HTTPRspFree(response_t *rsp)
-{
-	if(r->server != NULL)
-		free(r->server);
-	if(r->date != NULL)
-		free(r->date);
-	if(r->expires != NULL)
-		free(r->expires);
-	if(r->location != NULL)
-		free(r->location);
-	if(r->etag != NULL)
-		free(r->etag);
-	if(r->accept_ranges != NULL)
-		free(r->accept_ranges);
-	if(r->last_modified != NULL)
-		free(r->last_modified);
-	if(r->content_type != NULL)
-		free(r->content_type);
-	if(r->content_encoding != NULL)
-		free(r->content_encoding);
-
-	free(r);
-}
-
-void HTTPPairFree(http_pair_t *h)
-{
-	if(h->request_header != NULL)
-		http_request_free(h->request_header);
-	if(h->response_header != NULL)
-		http_response_free(h->response_header);
-	free(h);
-}
-
-int HTTPReqAdd(http_pair_t *h, request_t *req)
-{
-	if(h->request_header == NULL){
-		h->request_header = req;
-		return 0;
-	}else{
-		return 1;
+void HTTPReqFree(request_t *r){
+	if(r != NULL){
+		if(r->host != NULL)
+			free(r->host);
+		if(r->uri != NULL)
+			free(r->uri);
+		if(r->user_agent != NULL)
+			free(r->user_agent);
+		if(r->referer != NULL)
+			free(r->referer);
+		if(r->content_type != NULL)
+			free(r->content_type);
+		if(r->content_encoding != NULL)
+			free(r->content_encoding);
+		free(r);
 	}
 }
 
-int HTTPRspAdd(http_pair_t *h, response_t *rsp)
-{
-	if(h->response_header == NULL){
-		h->response_header = rsp;
-		return 0;
-	}else{
-		return 1;
+void HTTPRspFree(response_t *r){
+	if (r != NULL){
+		if(r->server != NULL)
+			free(r->server);
+		if(r->date != NULL)
+			free(r->date);
+		if(r->expires != NULL)
+			free(r->expires);
+		if(r->location != NULL)
+			free(r->location);
+		if(r->etag != NULL)
+			free(r->etag);
+		if(r->accept_ranges != NULL)
+			free(r->accept_ranges);
+		if(r->last_modified != NULL)
+			free(r->last_modified);
+		if(r->content_type != NULL)
+			free(r->content_type);
+		if(r->content_encoding != NULL)
+			free(r->content_encoding);
+		free(r);
+	}
+}
+
+void HTTPPairFree(http_pair_t *h){
+	if (h != NULL){
+		if(h->request != NULL)
+			HTTPReqFree(h->request);
+		if(h->response != NULL)
+			HTTPRspFree(h->response);
+		free(h);
+	}
+}
+
+void HTTPPairQueueFree(Queue *que){
+	http_pair_t *tmp;
+	while(QueueSize(que) > 0){
+		tmp = (http_pair_t *)QueueFront(que);
+		if(tmp != NULL)
+			HTTPPairFree(tmp);
+		QueuePop(que, 1);
 	}
 }
 
@@ -145,8 +233,7 @@ int HTTPRspAdd(http_pair_t *h, response_t *rsp)
  * Extract request message from data.
  * But only the header fields are extracted.
  */
-int HTTPParseReq(request_t *request, const char *data, const char *dataend)
-{
+int HTTPParseReq(request_t *request, const char *data, const char *dataend){
 	char *eoh, *eol, *linesp, *lineep;
 	int line_cnt = 0, lnl = 0, hdl = 0;
 
@@ -164,6 +251,7 @@ int HTTPParseReq(request_t *request, const char *data, const char *dataend)
 	}
 
 	request->uri = http_request_uri(linesp, lnl);
+	printf("URI: %s\n", request->uri);
 	request->version = http_request_version(linesp, lnl);
 	request->host = http_header_param(data, hdl, "Host:");
 	request->referer = http_header_param(data, hdl, "Referer:");
@@ -187,8 +275,7 @@ int HTTPParseReq(request_t *request, const char *data, const char *dataend)
  * Extract response message from data.
  * But only the header fields are extracted.
  */
-int HTTPParseRsp(response_t *response, const char *data, const char *dataend)
-{
+int HTTPParseRsp(response_t *response, const char *data, const char *dataend){
 	char *eoh, *eol, *linesp, *lineep;
 	int line_cnt = 0, i = 0, dim = sizeof(HTTP_STATUS_CODE_ARRAY), lnl = 0, hdl = 0;
 	http_status status;
@@ -232,8 +319,7 @@ int HTTPParseRsp(response_t *response, const char *data, const char *dataend)
  * To identify if the packet is carrying HTTP request message.
  * If it's true, the head end char pointer will be returned, else NULL.
  */
-static char* is_http_request(const char *ptr, const int datalen)
-{
+static char* is_http_request(const char *ptr, const int datalen){
 	http_mthd method = HTTP_MT_NONE;
 	char *head_end = NULL;
 
@@ -251,8 +337,7 @@ static char* is_http_request(const char *ptr, const int datalen)
  * To identify if the packet is carrying HTTP response message.
  * If it's true, the head end char pointer will be returned, else NULL.
  */
-static char* is_http_response(const char *ptr, const int datalen)
-{
+static char* is_http_response(const char *ptr, const int datalen){
 	http_ver version = HTTP_VER_NONE;
 	char *head_end = NULL;
 
@@ -279,8 +364,7 @@ static char* is_http_response(const char *ptr, const int datalen)
  * EOL character(s).
  */
 static char* 
-find_line_end(const char *data, const char *dataend, const char **eol)
-{
+find_line_end(const char *data, const char *dataend, const char **eol){
 	const char *lineend;
 
 	lineend = memchr(data, '\n', dataend - data + 1);
@@ -342,8 +426,7 @@ find_line_end(const char *data, const char *dataend, const char **eol)
  * Return 0 if there is no next token.
  */
 static int 
-get_token_len(const char *linep, const char *lineend, const char **next_token)
-{
+get_token_len(const char *linep, const char *lineend, const char **next_token){
     const char *tokenp;
     int token_len;
 
@@ -374,8 +457,7 @@ get_token_len(const char *linep, const char *lineend, const char **next_token)
  * Return a pointer to the end character of header
  */
 static char* 
-find_header_end(const char *data, const char *dataend, int *line_cnt)
-{
+find_header_end(const char *data, const char *dataend, int *line_cnt){
     const char *lf, *nxtlf, *end;
 
     end = NULL;
@@ -403,8 +485,7 @@ find_header_end(const char *data, const char *dataend, int *line_cnt)
  * Get HTTP request method by parsing header line.
  */
 static http_mthd 
-http_request_method(const char *data, int linelen)
-{
+http_request_method(const char *data, int linelen){
     const char *ptr;
     int	index = 0;
     int prefix_len = 0;
@@ -613,8 +694,7 @@ http_request_method(const char *data, int linelen)
  * Return NULL if no URI found.
  */
 static char* 
-http_request_uri(const char *line, int len)
-{
+http_request_uri(const char *line, int len){
     const char *next_token;
     const char *lineend;
     int tokenlen;
@@ -648,8 +728,7 @@ http_request_uri(const char *line, int len)
  * Get HTTP request version by parsing header line.
  */
 static http_ver 
-http_request_version(const char *line, int len)
-{
+http_request_version(const char *line, int len){
     const char *next_token;
     const char *lineend;
     int tokenlen;
@@ -689,8 +768,7 @@ http_request_version(const char *line, int len)
  * Get HTTP response version by parsing header line.
  */
 static http_ver 
-http_response_version(const char *line, int len)
-{
+http_response_version(const char *line, int len){
     if (strncmp(line, "HTTP/1.0", 8) == 0)
         return HTTP_VER_1_0;
 
@@ -705,8 +783,7 @@ http_response_version(const char *line, int len)
  * Get the HTTP response status code by parsing header line.
  */
 static http_status 
-http_response_status(const char *line, int len)
-{
+http_response_status(const char *line, int len){
     const char *next_token;
     const char *lineend;
     http_status status;
@@ -728,10 +805,8 @@ http_response_status(const char *line, int len)
     if (tokenlen == 0 || (line[tokenlen] != ' ' && line[tokenlen] != '\r' && line[tokenlen] != '\n')) {
         return status;
     }
-
-    /*
-     * Parse response status value.
-     */
+	
+	//Parse response status value.
     if (sscanf(line, "%i", &val) != 1) {
 		return status;
 	}
@@ -753,18 +828,14 @@ http_response_status(const char *line, int len)
  * Return the pointer to the parameter value if found;
  * else return NULL.
  */
-static char* 
-http_header_param(const char *header, int hlen, const char *param)
-{
-    const char *line, *eol, *lineend, *hend, *c;
-    char *ret;
-    int len, host_len, param_len;
+static char* http_header_param(const char *header, int hlen, const char *param){
+    char *line = header;
+	char *hend = header + hlen - 1;
+	char *eol = NULL, *lineend = NULL, *c = NULL;
+    char *ret = NULL;
+    int len = hlen;
+	int host_len, param_len;
 
-    hend = header + hlen - 1;
-    line = header;
-    len = hlen;
-    ret = NULL;
-    lineend = NULL;
     param_len = strlen(param);
     while (lineend < hend) {
         lineend = find_line_end(line, line+len-1, &eol);
@@ -773,9 +844,7 @@ http_header_param(const char *header, int hlen, const char *param)
                 c = line + param_len;
                 while (*c == ' ' && c < lineend)
                     c++;
-                /*
-                 * Move the EOL pointer to the last none-LFCR character.
-                 */
+                // Move the EOL pointer to the last none-LFCR character.
                 while ( (*eol == '\r' || *eol == '\n') && eol > c)
                 	eol--;
                 host_len = eol - c + 1;

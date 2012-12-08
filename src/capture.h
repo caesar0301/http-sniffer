@@ -5,7 +5,7 @@
 #include "pcap.h"
 #include "queue.h"
 
-int CaptureProcessPacket(const char *raw_data, const struct pcap_pkthdr *pkthdr, Queue *packet_queue);
-
+int CaptureProcessRawPacket(const char *raw_data, const struct pcap_pkthdr *pkthdr);
+int CaptureProcessPacketQueue(void);
 
 #endif /* __CAPTURE_H__ */

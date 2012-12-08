@@ -8,6 +8,7 @@
 #include "pcap.h"
 #include "queue.h"
 #include "capture.h"
+#include "flow.h"
 
 // Stop signs for program 
 static long limit_pktcnt = -1;
@@ -139,9 +140,15 @@ int main(int argc, char *argv[]){
 	file_cnt++;
 	
 	//Prepare Queues: packet queue and flow queue
-	Queue packet_queue, flow_queue;
-	queue_init(&packet_queue);
-	queue_init(&flow_queue);
+	Queue __GLOBAL_PACKET_QUEUE, __GLOBAL_FLOW_QUEUE;
+	QueueInit(&__GLOBAL_PACKET_QUEUE);
+	QueueInit(&__GLOBAL_FLOW_QUEUE);
+	
+	//Prepare flow hash table
+	if(FHTInit() != 0){
+		printf("Create flow hash table failed; exit now.");
+		exit (-1);
+	}
 	
 	//Do the packet processing work
 	int res = 0;
@@ -161,8 +168,18 @@ int main(int argc, char *argv[]){
 			printf("Packets are being read from a 'savefile', and there are no more packets to read from the savefile\n");
 			return (-1);
 		}else{
-			CaptureProcessPacket(raw, pkthdr, &packet_queue);
-			printf("Queue size: %d\n", queue_size(&packet_queue));
+			int res;
+			CaptureProcessRawPacket(raw, pkthdr);
+			
+			res = CaptureProcessPacketQueue();
+			if(res == 0)
+				printf("Flow hash table items: %d\n", FHTItemCount());
+			
+			flow_t *new_flow;
+			if(QueueSize(&__GLOBAL_FLOW_QUEUE) > 0){
+				new_flow = QueueFront(&__GLOBAL_FLOW_QUEUE);
+				FlowPrint(new_flow);
+			}
 			// process_packet(&raw, &packetinfo, &packetinfosize);
 			// if(NULL == packetinfo)
 			// 	continue;

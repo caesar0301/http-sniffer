@@ -7,122 +7,13 @@
 #ifndef __HTTP_H__
 #define __HTTP_H__
 
+#include <stdlib.h>
 #include <sys/types.h>
 #include <time.h>
+#include "queue.h"
 
+// HTTP response status number.
 typedef enum _http_status http_status;
-typedef enum _http_mthd http_mthd;
-typedef enum _http_ver http_ver;
-typedef struct _http_st_code http_st_code;
-typedef struct _request_t request_t;
-typedef struct _response_t response_t;
-typedef struct _http_pair_t	http_pair_t;
-
-extern http_st_code HTTP_STATUS_CODE_ARRAY[] = {
-    {100, HTTP_ST_100},
-    {101, HTTP_ST_101},
-    {102, HTTP_ST_102},
-    {199, HTTP_ST_199},
-
-    {200, HTTP_ST_200},
-    {201, HTTP_ST_201},
-    {202, HTTP_ST_202},
-    {203, HTTP_ST_203},
-    {204, HTTP_ST_204},
-    {205, HTTP_ST_205},
-    {206, HTTP_ST_206},
-    {207, HTTP_ST_207},
-    {299, HTTP_ST_299},
-
-    {300, HTTP_ST_300},
-    {301, HTTP_ST_301},
-    {302, HTTP_ST_302},
-    {303, HTTP_ST_303},
-    {304, HTTP_ST_304},
-    {305, HTTP_ST_305},
-    {307, HTTP_ST_307},
-    {399, HTTP_ST_399},
-
-    {400, HTTP_ST_400},
-    {401, HTTP_ST_401},
-    {402, HTTP_ST_402},
-    {403, HTTP_ST_403},
-    {404, HTTP_ST_404},
-    {405, HTTP_ST_405},
-    {406, HTTP_ST_406},
-    {407, HTTP_ST_407},
-    {408, HTTP_ST_408},
-    {409, HTTP_ST_409},
-    {410, HTTP_ST_410},
-    {411, HTTP_ST_411},
-    {412, HTTP_ST_412},
-    {413, HTTP_ST_413},
-    {414, HTTP_ST_414},
-    {415, HTTP_ST_415},
-    {416, HTTP_ST_416},
-    {417, HTTP_ST_417},
-    {422, HTTP_ST_422},
-    {423, HTTP_ST_423},
-    {424, HTTP_ST_424},
-    {499, HTTP_ST_499},
-
-    {500, HTTP_ST_500},
-    {501, HTTP_ST_501},
-    {502, HTTP_ST_502},
-    {503, HTTP_ST_503},
-    {504, HTTP_ST_504},
-    {505, HTTP_ST_505},
-    {507, HTTP_ST_507},
-    {599, HTTP_ST_599}
-};
-
-extern char *HTTP_METHOD_STRING_ARRAY[] = {
-    "OPTIONS",
-    "GET",
-    "HEAD",
-    "POST",
-    "PUT",
-    "DELETE",
-    "TRACE",
-    "CONNECT",
-    "PATCH",
-    "LINK",
-    "UNLINK",
-    "PROPFIND",
-    "MKCOL",
-    "COPY",
-    "MOVE",
-    "LOCK",
-    "UNLOCK",
-    "POLL",
-    "BCOPY",
-    "BMOVE",
-    "SEARCH",
-    "BDELETE",
-    "PROPPATCH",
-    "BPROPFIND",
-    "BPROPPATCH",
-    "LABEL",
-    "MERGE",
-    "REPORT",
-    "UPDATE",
-    "CHECKIN",
-    "CHECKOUT",
-    "UNCHECKOUT",
-    "MKACTIVITY",
-    "MKWORKSPACE",
-    "VERSION-CONTROL",
-    "BASELINE-CONTROL",
-    "NOTIFY",
-    "SUBSCRIBE",
-    "UNSUBSCRIBE",
-    "ICY",
-    "NONE"
-};
-
-/*
- * HTTP response status number.
- */
 enum _http_status
 {
     HTTP_ST_100=100,   /**< Continue */
@@ -183,6 +74,8 @@ enum _http_status
     HTTP_ST_NONE
 };
 
+// HTTP request methods
+typedef enum _http_mthd http_mthd;
 enum _http_mthd
 {
     HTTP_MT_OPTIONS = 0, /* RFC2616 */
@@ -228,6 +121,8 @@ enum _http_mthd
     HTTP_MT_NONE
 };
 
+// HTTP versions
+typedef enum _http_ver http_ver;
 enum _http_ver
 {
     HTTP_VER_1_0,
@@ -235,13 +130,16 @@ enum _http_ver
     HTTP_VER_NONE
 };
 
-
+// Self-defined strcture of HTTP status code number and status name
+typedef struct _http_st_code http_st_code;
 struct _http_st_code
 {
     int num;          	/* status code number */
     http_status st;   /* status */
 };
 
+// Self-defined structure of HTTP request
+typedef struct _request_t request_t;
 struct _request_t
 {
 	http_ver 	version;
@@ -263,6 +161,9 @@ struct _request_t
 	int			hdlen;	// Header length
 };
 
+
+// Self-defined structure of HTTP response
+typedef struct _response_t response_t;
 struct _response_t
 {
 	http_status 	status;
@@ -281,10 +182,12 @@ struct _response_t
 	int				hdlen;	// Header length
 };
 
+// Self-defined HTTP message pair
+typedef struct _http_pair_t	http_pair_t;
 struct _http_pair_t
 {
-	request_t	*request_header;
-	response_t	*response_header;
+	request_t	*request;
+	response_t	*response;
 	time_t	req_fb_sec;
 	time_t	req_fb_usec;
 	time_t	req_lb_sec;
@@ -297,18 +200,18 @@ struct _http_pair_t
 	u_int32_t	rsp_total_len;
 	u_int32_t	req_body_len;
 	u_int32_t	rsp_body_len;
-	http_pair_t	*next;
 };
 
 u_int8_t HttpMessageType(const char *p, const int datalen, const char **hdend);	/* If the packet is carrying HTTP(request or response) data */
 http_pair_t *HTTPPairNew(void);					/* Create a new http_pair_t object */
 request_t *HTTPReqNew(void);					/* Create a new request_t object */
 response_t *HTTPRspNew(void);					/* Create a new response_t object */
+
 void HTTPReqFree(request_t *req);				/* Free a request_t object */
 void HTTPRspFree(response_t *rsp);				/* Free a response_t object */
 void HTTPPairFree(http_pair_t *h);				/* Free a http_pair_t object */
-int HTTPReqAdd(http_pair_t *h, request_t *req);										/* Add a request_t object to http_pair_t request chain */
-int HTTPRspAdd(http_pair_t *h, response_t *rsp);									/* Add a response_t object to http_pair_t response chain */
+void HTTPPairQueueFree(Queue *q);					/* Fee a queue whose data is http pair type */
+
 int HTTPParseReq(request_t *request, const char *data, const char *dataend);		/* Parse the packet and store in a request_t object */
 int HTTPParseRsp(response_t *response, const char *data, const char *dataend);		/* Parse the packet and store in a response_t object */
 

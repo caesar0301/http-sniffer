@@ -17,18 +17,18 @@
 #include <stdlib.h>
 #include "queue.h"
 
-void queue_init(Queue *q)
+void QueueInit(Queue *q)
 {
     q->size = 0;
     q->head = q->tail = NULL;
 }
 
-int queue_size(Queue *q)
+int QueueSize(Queue *q)
 {
     return q->size;
 }
 
-void queue_push(Queue *q, void *element)
+void QueuePush(Queue *q, void *element)
 {
     if (!q->head) {
         q->head = (QueueNode*)malloc(sizeof(QueueNode));
@@ -44,12 +44,17 @@ void queue_push(Queue *q, void *element)
     q->size++;
 }
 
-void *queue_front(Queue *q)
+void *QueueFront(Queue *q)
 {
     return q->size ? q->head->data : NULL;
 }
 
-void queue_pop(Queue *q, int release)
+void *QueueTail(Queue *q)
+{
+    return q->size ? q->tail->data : NULL;
+}
+
+void QueuePop(Queue *q, int release)
 {
     if (q->size) {
         QueueNode *temp = q->head;
@@ -66,7 +71,7 @@ void queue_pop(Queue *q, int release)
     }
 }
 
-void queue_clear(Queue *q, int release)
+void QueueClear(Queue *q, int release)
 {
     while (q->size) {
         QueueNode *temp = q->head;
