@@ -1,7 +1,7 @@
-About Program
+http-sniffer
 ==========
 
-A tool to sniffer HTTP header records beyond TCP flow info. 
+A tool to sniff HTTP header records beyond TCP flow info. 
 
 Each line represents a TCP flow and its HTTP messages in json format.
 
@@ -9,8 +9,10 @@ Support both live capturing or offline trace.
 
 Use ./bin/weblogger -h to get more usage info.
 
+
+
 About Author
-===========
+------------
 
 Xiaming Chen, SJTU, Shanghai, China
 
@@ -18,19 +20,26 @@ chenxm35@gmail.com
 
 2012-04-01
 
+
+
+
 Dependencis
-===========
+------------
 
 libpcap, scons, json-c
 
+
+
 How to Use
-===========
+------------
 
 * Run 'scons' to compile the program: debug=0 for normal usage; debug=1 for support NFM library.
 * The excutive files lie in foder bin/.
 
+
+
 Output Data Format
-===========
+------------
 
 Each line (like below) is encoded by JSON format which convinient for furture processing.
 
