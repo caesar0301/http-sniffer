@@ -1,7 +1,7 @@
 http-sniffer
 ==========
 
-A tool to sniff HTTP header records beyond TCP flow info. 
+A multi-threading tool to sniff HTTP header records beyond TCP flow statistics. 
 
 Each line represents a TCP flow and its HTTP messages in json format.
 
