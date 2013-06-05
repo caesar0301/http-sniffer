@@ -3,45 +3,44 @@ http-sniffer
 
 A multi-threading tool to sniff HTTP header records beyond TCP flow statistics. 
 
-Each line represents a TCP flow and its HTTP messages in json format.
-
-Support both live capturing or offline trace.
-
-Use ./bin/weblogger -h to get more usage info.
 
 
-
-About Author
+Features
 ------------
 
-Xiaming Chen, SJTU, Shanghai, China
-
-chenxm35@gmail.com
-
-2012-04-01
-
-
+* Support both offline PCAP file and live NIC sniffing
+* Perform multi-threading process, whereby the tool gets higher performance in face of big tarffic volume
+* Export statistics of TCP flows
+* Export HTTP request/response pairs if they are present in the TCP flow
+* Support JSON format output
 
 
 Dependencis
 ------------
 
-libpcap, scons, json-c
+* libpcap: http://www.tcpdump.org/
+* scons: http://www.scons.org/
+* json-c: https://github.com/json-c/json-c
 
 
 
 How to Use
 ------------
 
-* Run 'scons' to compile the program: debug=0 for normal usage; debug=1 for support NFM library.
-* The excutive files lie in foder bin/.
+* Run 'scons' to compile the program
+
+        $cd http-sniffer
+        $scons
+        
+* The excutive files lie in foder `bin/`.
 
 
 
 Output Data Format
 ------------
 
-Each line (like below) is encoded by JSON format which convinient for furture processing.
+Each line represents a TCP flow and its HTTP messages in json format, as 
+is encoded by JSON format which convinient for furture processing.
 
    { "time_local": "20120423 13:50:09", 
    "saddr": "192.168.1.4", 
@@ -87,3 +86,13 @@ Each line (like below) is encoded by JSON format which convinient for furture pr
       "last_modified": "Thu, 30 Jun 2011 10:56:51 GMT"} 
     } ] 
    }
+
+
+About Author
+------------
+
+Xiaming Chen (chenxm35@gmail.com)
+
+SJTU, Shanghai, China
+
+2012-04-01
