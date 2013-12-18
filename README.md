@@ -42,7 +42,8 @@ Output Data Format
 Each line represents a TCP flow and its HTTP messages in json format, as 
 is encoded by JSON format which convinient for furture processing.
 
-   { "time_local": "20120423 13:50:09", 
+```json
+   { "time_local": "2012-04-23T13:50:09", 
    "saddr": "192.168.1.4", 
    "daddr": "192.168.1.5", 
    "sport": 45753, 
@@ -86,7 +87,7 @@ is encoded by JSON format which convinient for furture processing.
       "last_modified": "Thu, 30 Jun 2011 10:56:51 GMT"} 
     } ] 
    }
-
+```
 
 About Author
 ------------
