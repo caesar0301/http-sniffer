@@ -18,6 +18,7 @@ print_usage(const char* pro_name)
 	printf("    or %s -f tracefile [-o dumpfile]\n", pro_name);
 }
 
+int GP_CAP_FIN = 0;
 int main(int argc, char *argv[]){
 	char* interface = NULL;
 	char* dumpfile = NULL;
@@ -61,18 +62,20 @@ int main(int argc, char *argv[]){
 	void *thread_result;
 	packet_queue_init();	/* Initialize packet queue */
 	flow_init();			/* Initialize flow queue and hashtable */
+	// Start backend jobs defined in jobs.c
 	pthread_create(&j_pkt_q, NULL, (void*)process_packet_queue, NULL);
-	pthread_create(&j_debug_p, NULL, (void*)debugging_print, NULL);
-	pthread_create(&j_flow_q, NULL, (void*)process_flow_queue, dumpfile);
 	pthread_create(&j_scrb_htbl, NULL, (void*)scrubbing_flow_htbl, NULL);
-	
+	pthread_create(&j_flow_q, NULL, (void*)process_flow_queue, dumpfile);
+	// For debugging
+	pthread_create(&j_debug_p, NULL, (void*)debugging_print, NULL);
+	// Start main capture in live or offline mode
 	if (interface != NULL){
 		capture_main(interface, packet_queue_enq);
 	}else	//tracefile != NULL
 	{
 		capture_offline(tracefile, packet_queue_enq);
 	}
-
+	// Wait the threads to end
 	pthread_join(j_pkt_q, &thread_result);
 	pthread_join(j_debug_p, &thread_result);
 	pthread_join(j_flow_q, &thread_result);

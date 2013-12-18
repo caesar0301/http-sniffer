@@ -834,7 +834,8 @@ flow_dump_file_json(const flow_t *flow, const char* file)
 	struct tm *timeinfo = NULL;
 	time( &raw_time );
 	timeinfo = localtime( &raw_time );
-	strftime(time_buf, sizeof(time_buf), "%Y%m%d %H:%M:%S", timeinfo);
+	// ISO 8601 time format
+	strftime(time_buf, sizeof(time_buf), "%Y-%m-%dT%H:%M:%S", timeinfo);
 	json_object_object_add(new_flow, "t_r", json_object_new_string(time_buf));
 	/*Convert IP addr */
 	char *saddr = malloc(sizeof("aaa.bbb.ccc.ddd"));

@@ -244,12 +244,12 @@ flow_hash_scnt(void)
 }
 
 /*
- * Close a flow forcedly if the delta time is lower than timeslot.
+ * Close a flow forcedly if the delta time is lower than timeout.
  * Then add the flow to flow queue.
  * Return the number of flows deleted forcedly.
  */
 int 
-flow_scrubber(const int timeslot)
+flow_scrubber(const int timeout)
 {
 	int i = 0;
 	unsigned long delta = 0;
@@ -268,7 +268,7 @@ flow_scrubber(const int timeslot)
 			gettimeofday(&tv, &tz);
 			delta = abs(tv.tv_sec - flow->last_action_sec);
 
-			if (delta > timeslot){
+			if (delta > timeout){
 				num++;
 				flow->close = FORCED_CLOSE;	// Close flow forcedly.
 				flow_queue_enq(flow_hash_delete(flow));

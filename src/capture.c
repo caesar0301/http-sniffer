@@ -154,6 +154,7 @@ capture_main(const char* interface, void (*pkt_handler)(void*))
 	struct pcap_pkthdr pkthdr;
 	packet_t *packet = NULL;
 	
+	printf("Online mode ...\n");
 	cap = pcap_open_live(interface, 65535, 0, 1000, errbuf);
 	if( cap == NULL){
 		printf("%s\n",errbuf);
@@ -170,6 +171,10 @@ capture_main(const char* interface, void (*pkt_handler)(void*))
 		}
 		pkt_handler(packet);
 	}
+
+	if( cap != NULL){
+		pcap_close(cap);
+	}
 	return 0;
 }
 
@@ -183,22 +188,36 @@ capture_offline(const char* filename, void (*pkt_handler)(void*))
 	pcap_t *cap = NULL;
 	struct pcap_pkthdr pkthdr;
 	packet_t *packet = NULL;
+	extern int GP_CAP_FIN;
 	
+	// Open handler
+	printf("Offline mode ...\n");
 	cap = pcap_open_offline(filename, errbuf);
 	if( cap == NULL){
 		printf("%s\n",errbuf);
 		exit(1);
 	}
+
+	// Run the loop
 	while(1){
 		raw = pcap_next(cap, &pkthdr);
 		if( raw == NULL){
-			continue;
+			// No more packets?
+			GP_CAP_FIN = 1;
+			break;
 		}
 		packet = packet_preprocess(raw, &pkthdr);
 		if( NULL == packet ){
 			continue;
 		}
+		// Handle the packet
 		pkt_handler(packet);
+	}
+
+	// Close the handler
+	if( cap != NULL){
+		printf("Close handler!\n");
+		pcap_close(cap);
 	}
 	return 0;
 }

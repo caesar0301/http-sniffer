@@ -2,3 +2,5 @@
 *.dblite
 lib/*
 *.txt
+*.o
+*~

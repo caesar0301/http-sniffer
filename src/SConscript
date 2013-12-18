@@ -1,7 +1,7 @@
 SConscript(['./flow/SConscript',
-			'./http/SConscript',
-			'./packet/SConscript',
-			'./tcp/SConscript'])
+            './http/SConscript',
+            './packet/SConscript',
+            './tcp/SConscript'])
 
 env = Environment(CCFLAGS='-w')
 # Library paths
@@ -14,24 +14,24 @@ cpp_path=['../include']
 # Flag debug to decide if NFM libs are used to compile program
 debug = ARGUMENTS.get('debug', 0)
 if int(debug):
-	# NFM library names
-	nfm_libs = ['nfm', 'nfm_framework', 'nfm_error', 'nfm_packet', 'nfm_rules', 'nfm_platform', 'nfe', 'nfp']
-	libs += nfm_libs
-	# NFM library path
-	lib_path.append('/opt/netronome/lib')
-	# NFM header file path
-	cpp_path.append('/opt/netronome/nfm/include')
+    # NFM library names
+    nfm_libs = ['nfm', 'nfm_framework', 'nfm_error', 'nfm_packet', 'nfm_rules', 'nfm_platform', 'nfe', 'nfp']
+    libs += nfm_libs
+    # NFM library path
+    lib_path.append('/opt/netronome/lib')
+    # NFM header file path
+    cpp_path.append('/opt/netronome/nfm/include')
 
 # Compile the programs
-env.Program(target = '../bin/weblogger', 
-			source = Glob('*.c'),
-			LIBPATH = lib_path,
-			LIBS = libs,
-			CPPPATH = cpp_path)
+env.Program(target = '../bin/http-sniffer', 
+            source = Glob('*.c'),
+            LIBPATH = lib_path,
+            LIBS = libs,
+            CPPPATH = cpp_path)
 
 env.Program(target = '../bin/tracedump', 
-			source = './tracedump/tracedump.c',
-			LIBS = libs,
-			LIBPATH = lib_path,
-			CPPPATH = cpp_path)
-		
+            source = './tracedump/tracedump.c',
+            LIBS = libs,
+            LIBPATH = lib_path,
+            CPPPATH = cpp_path)
+        
