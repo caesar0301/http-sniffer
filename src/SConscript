@@ -1,25 +1,43 @@
+#!/usr/bin/env python
+import os, sys
+
+def checkLibrary(path_list, name):
+    fs = []
+    for path in path_list:
+        libname = os.path.join(path, 'lib'+name+'.*')
+        fs.extend(Glob(libname))
+    return True if len(fs)>0 else False
+
+def printCheck(lib_path, libname):
+    has = checkLibrary(lib_path, libname)
+    print("Checking %s ... %s" % (libname, 'true' if has else 'false'))
+    if not has:
+        print("Error: please install %s first or check the installed path." % libname)
+        sys.exit(-1)
+
+# Set compiling environment
+env = Environment(CCFLAGS='-w')
+lib_path = ['../lib', '/usr/local/lib', '/usr/lib']
+printCheck(lib_path, 'pthread')
+printCheck(lib_path, 'pcap')
+printCheck(lib_path, 'json-c')
+libs = Glob('../lib/*.a') + ['pthread', 'pcap', 'json-c']
+cpp_path=['../include', '/usr/include', '/usr/local/include']
+
+# Other Scons scripts
 SConscript(['./flow/SConscript',
             './http/SConscript',
             './packet/SConscript',
             './tcp/SConscript'])
 
-env = Environment(CCFLAGS='-w')
-# Library paths
-lib_path = ['../lib', '/usr/local/lib', '/usr/lib']
-# Library names
-libs = Glob('../lib/*.a') + ['pthread', 'pcap', 'json']
-# Header file path
-cpp_path=['../include']
-
 # Flag debug to decide if NFM libs are used to compile program
+# NFM is a network processor card driver to capture network traffic.
 debug = ARGUMENTS.get('debug', 0)
 if int(debug):
-    # NFM library names
+    print("NFM enabled.")
     nfm_libs = ['nfm', 'nfm_framework', 'nfm_error', 'nfm_packet', 'nfm_rules', 'nfm_platform', 'nfe', 'nfp']
     libs += nfm_libs
-    # NFM library path
     lib_path.append('/opt/netronome/lib')
-    # NFM header file path
     cpp_path.append('/opt/netronome/nfm/include')
 
 # Compile the programs

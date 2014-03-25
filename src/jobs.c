@@ -107,7 +107,6 @@ scrubbing_flow_htbl(void)
 		}
 	}
 	pthread_exit(NULL);
-	return 0;
 }
 
 
@@ -126,5 +125,4 @@ debugging_print(void)
 		}
 	}
 	pthread_exit(NULL);
-	return 0;
 }

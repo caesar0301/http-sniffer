@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <json/json.h>
+#include <json-c/json.h>
 #include <unistd.h>
 
 #include "util.h"
