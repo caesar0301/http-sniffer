@@ -16,13 +16,6 @@
 #include "packet.h"
 #include "util.h"
 
-static int no_packet = FALSE;	/* for debugging */
-
-BOOL
-capture_finished(void)
-{
-	return no_packet;
-}
 
 /* Parse packets' header information and return a packet_t object */
 packet_t*
@@ -39,7 +32,6 @@ packet_preprocess(const char *raw_data, const struct pcap_pkthdr *pkthdr)
 	pkt->cap_sec = pkthdr->ts.tv_sec;
 	pkt->cap_usec = pkthdr->ts.tv_usec;
 	pkt->raw_len = pkthdr->caplen;
-
 	/* Parse ethernet header */
 	eth_hdr = packet_parse_ethhdr(cp);
 	/* Is IP...? */
@@ -57,7 +49,6 @@ packet_preprocess(const char *raw_data, const struct pcap_pkthdr *pkthdr)
 	pkt->ip_hl = (ip_hdr->ihl) << 2;	/* bytes */
 	pkt->ip_tol = ip_hdr->tot_len;
 	pkt->ip_pro = ip_hdr->protocol;
-
 	/* Is TCP...? */
 	if(pkt->ip_pro != 0x06){
 		free_ethhdr(eth_hdr);
@@ -78,7 +69,6 @@ packet_preprocess(const char *raw_data, const struct pcap_pkthdr *pkthdr)
 	pkt->tcp_hl = tcp_hdr->th_off << 2;		/* bytes */
 	pkt->tcp_dl = pkt->ip_tol - pkt->ip_hl - pkt->tcp_hl;
 	pkt->http = 0; /* default */
-
 	/* Check the TCP ports to identify if the packet carries HTTP data
 	   We only consider normal HTTP traffic without encryption */
 	if( !(tcp_hdr->th_sport == 80 || tcp_hdr->th_dport == 80 || \
@@ -92,33 +82,26 @@ packet_preprocess(const char *raw_data, const struct pcap_pkthdr *pkthdr)
 	}
 
 	/* Process packets of flows which carry HTTP traffic */
-	if(pkt->tcp_dl != 0)
-	{
+	if(pkt->tcp_dl != 0){
 		cp = cp + pkt->tcp_hl;
-		if( !IsHttpPacket(cp, pkt->tcp_dl) )
-		{
+		if( !IsHttpPacket(cp, pkt->tcp_dl) ){
 			/* If the packet is not HTTP, we erase the payload. */
 			pkt->tcp_odata = NULL;
 			pkt->tcp_data = pkt->tcp_odata;
-		}
-		else
-		{
+		}else{
 			/* Yes, it's HTTP packet */
 			char *head_end = NULL;
 			int hdl = 0;
 			head_end = IsRequest(cp, pkt->tcp_dl);
-			if( head_end != NULL )
-			{
+			if( head_end != NULL ){
 				/* First packet of request. */
 				hdl = head_end - cp + 1;
 				pkt->http = HTTP_REQ;
 				/* Fake TCP data length with only HTTP header. */
 				pkt->tcp_dl = hdl;
 			}
-
 			head_end = IsResponse(cp, pkt->tcp_dl);
-			if( head_end != NULL )
-			{
+			if( head_end != NULL ){
 				/* First packet of response. */
 				hdl = head_end - cp + 1;
 				pkt->http = HTTP_RSP;
@@ -131,9 +114,7 @@ packet_preprocess(const char *raw_data, const struct pcap_pkthdr *pkthdr)
 			memset(pkt->tcp_odata, 0, pkt->tcp_dl + 1);
 			memcpy(pkt->tcp_odata, cp, pkt->tcp_dl);
 		}
-	}
-	else
-	{
+	}else{
 		pkt->tcp_odata = NULL;
 		pkt->tcp_data = pkt->tcp_odata;
 	}
@@ -145,43 +126,7 @@ packet_preprocess(const char *raw_data, const struct pcap_pkthdr *pkthdr)
 
 /* Capture main function. */
 int 
-capture_main(const char* interface, void (*pkt_handler)(void*))
-{
-	char errbuf[PCAP_ERRBUF_SIZE];
-	memset(errbuf, 0, PCAP_ERRBUF_SIZE);
-	char *raw = NULL;
-	pcap_t *cap = NULL;
-	struct pcap_pkthdr pkthdr;
-	packet_t *packet = NULL;
-	
-	printf("Online mode ...\n");
-	cap = pcap_open_live(interface, 65535, 0, 1000, errbuf);
-	if( cap == NULL){
-		printf("%s\n",errbuf);
-		exit(1);
-	}
-	while(1){
-		raw = pcap_next(cap, &pkthdr);
-		if( raw == NULL){
-			continue;
-		}
-		packet = packet_preprocess(raw, &pkthdr);
-		if( NULL == packet ){
-			continue;
-		}
-		pkt_handler(packet);
-	}
-
-	if( cap != NULL){
-		pcap_close(cap);
-	}
-	return 0;
-}
-
-/* Read packets from pcap trace */
-int 
-capture_offline(const char* filename, void (*pkt_handler)(void*))
-{
+capture_main(const char* interface, void (*pkt_handler)(void*), int livemode){
 	char errbuf[PCAP_ERRBUF_SIZE];
 	memset(errbuf, 0, PCAP_ERRBUF_SIZE);
 	char *raw = NULL;
@@ -190,34 +135,27 @@ capture_offline(const char* filename, void (*pkt_handler)(void*))
 	packet_t *packet = NULL;
 	extern int GP_CAP_FIN;
 	
-	// Open handler
-	printf("Offline mode ...\n");
-	cap = pcap_open_offline(filename, errbuf);
-	if( cap == NULL){
-		printf("%s\n",errbuf);
-		exit(1);
+	printf("%s mode ...\n", livemode==1 ? "Online" : "Offline");
+	if ( livemode==1 ) {cap = pcap_open_live(interface, 65535, 0, 1000, errbuf);}
+	else { cap = pcap_open_offline(interface, errbuf); }
+
+	if( cap == NULL) {
+		printf("%s\n",errbuf); exit(1);
 	}
 
-	// Run the loop
 	while(1){
-		raw = pcap_next(cap, &pkthdr);
-		if( raw == NULL){
-			// No more packets?
-			GP_CAP_FIN = 1;
-			break;
-		}
-		packet = packet_preprocess(raw, &pkthdr);
-		if( NULL == packet ){
-			continue;
-		}
-		// Handle the packet
-		pkt_handler(packet);
-	}
 
-	// Close the handler
-	if( cap != NULL){
-		printf("Close handler!\n");
-		pcap_close(cap);
+		raw = pcap_next(cap, &pkthdr);
+		if( NULL != raw){
+			packet = packet_preprocess(raw, &pkthdr);
+			if( NULL != packet )
+				pkt_handler(packet);
+		} else if ( livemode==0 ) {
+			GP_CAP_FIN = 1; break;
+		}
+
 	}
+	
+	if( cap != NULL) pcap_close(cap);
 	return 0;
 }

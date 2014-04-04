@@ -7,8 +7,6 @@
 BOOL
 capture_finished(void);
 int
-capture_main(const char* interface, void (*pkt_handler)(void*));
-int 
-capture_offline(const char* filename, void (*pkt_handler)(void*));
+capture_main(const char*, void (*pkt_handler)(void*), int);
 	
 #endif /* __CAPTURE_H__ */
