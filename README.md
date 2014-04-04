@@ -3,6 +3,7 @@ http-sniffer
 
 A multi-threading tool to sniff HTTP header records beyond TCP flow statistics. 
 
+https://github.com/caesar0301/http-sniffer
 
 
 Features
@@ -18,25 +19,33 @@ Features
 Dependencis
 ------------
 
-* libpcap: http://www.tcpdump.org/
-* scons: http://www.scons.org/
-* json-c: https://github.com/json-c/json-c
+The `http-sniffer` depends sereval libraries:
+
+  * [libpcap](http://www.tcpdump.org/) to extract traffic packet,
+  * [json-c](https://github.com/json-c/json-c) to support json parsing, and
+  * [scons](http://www.scons.org/) to build the project.
 
 
+A known issue about `json-c` is the unused params errors on linux platform,
+you can use an [alternative](https://github.com/phalcon/json-c) to solve it.
+You may also need to export linked library path which includes `libjson-c.*`
 
-How to Use
+  export LD_LIBRARY_PATH=/usr/local/lib
+
+
+How to Build
 ------------
 
-* Run 'scons' to compile the program
+* Run `scons` in root folder to compile:
 
         $cd http-sniffer
         $scons
         
-* The excutive files lie in foder `bin/`.
+* The excutive file lies in foder `bin/`.
 
 
 
-Output Data Format
+Output Format
 ------------
 
 Each line represents a TCP flow and its HTTP messages in json format, as 

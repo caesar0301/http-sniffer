@@ -15,30 +15,27 @@ def printCheck(lib_path, libname):
         print("Error: please install %s first or check the installed path." % libname)
         sys.exit(-1)
 
+
 # Set compiling environment
 env = Environment(CCFLAGS='-w')
-lib_path = ['../lib', '/usr/local/lib', '/usr/lib']
+lib_path = ['.', '/usr/local/lib', '/usr/lib', '/usr/lib/x86_64-linux-gnu/']
 printCheck(lib_path, 'pthread')
 printCheck(lib_path, 'pcap')
 printCheck(lib_path, 'json-c')
-libs = Glob('../lib/*.a') + ['pthread', 'pcap', 'json-c']
+libs = Glob('.[ao]') + ['pthread', 'pcap', 'json-c']
 cpp_path=['../include', '/usr/include', '/usr/local/include']
 
-# Other Scons scripts
-SConscript(['./flow/SConscript',
-            './http/SConscript',
-            './packet/SConscript',
-            './tcp/SConscript'])
 
 # Flag debug to decide if NFM libs are used to compile program
 # NFM is a network processor card driver to capture network traffic.
-debug = ARGUMENTS.get('debug', 0)
-if int(debug):
+if int(ARGUMENTS.get('debug', 0)):
     print("NFM enabled.")
-    nfm_libs = ['nfm', 'nfm_framework', 'nfm_error', 'nfm_packet', 'nfm_rules', 'nfm_platform', 'nfe', 'nfp']
+    nfm_libs = ['nfm', 'nfm_framework', 'nfm_error', 'nfm_packet', 
+                'nfm_rules', 'nfm_platform', 'nfe', 'nfp']
     libs += nfm_libs
     lib_path.append('/opt/netronome/lib')
     cpp_path.append('/opt/netronome/nfm/include')
+
 
 # Compile the programs
 env.Program(target = '../bin/http-sniffer', 
@@ -46,10 +43,3 @@ env.Program(target = '../bin/http-sniffer',
             LIBPATH = lib_path,
             LIBS = libs,
             CPPPATH = cpp_path)
-
-env.Program(target = '../bin/tracedump', 
-            source = './tracedump/tracedump.c',
-            LIBS = libs,
-            LIBPATH = lib_path,
-            CPPPATH = cpp_path)
-        

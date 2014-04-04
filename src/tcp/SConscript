@@ -1,1 +1,0 @@
-Library('../../lib/tcp', Split('order.c tcp.c'), CPPPATH=['../../include'])
