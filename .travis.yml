@@ -6,6 +6,6 @@ before_script:
   - cd json-c
   - sh autogen.sh
   - ./configure && make
-  - sudo make install
+  - sudo make install && cd -
 
 script: scons
