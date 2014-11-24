@@ -2,5 +2,9 @@ language: c
 
 before_script:
   - sudo apt-get install libpcap-dev
+  - git clone https://github.com/json-c/json-c.git
+  - cd json-c
+  - sh autogen.sh
+  - ./configure && make && make install
 
 script: scons
