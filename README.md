@@ -1,10 +1,9 @@
 http-sniffer
 ==========
 
+[![Build Status](https://travis-ci.org/caesar0301/http-sniffer.svg)](https://travis-ci.org/caesar0301/http-sniffer)
+
 A multi-threading tool to sniff HTTP header records beyond TCP flow statistics. 
-
-https://github.com/caesar0301/http-sniffer
-
 
 Features
 ------------
