@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>http-sniffer by caesar0301</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>http-sniffer</h1>
+        <p>A multi-threading tool to sniff TCP flow statistics and embedded HTTP headers from PCAP file. Each TCP flow carrying HTTP is exported to text file in json format.</p>
+        <p class="view"><a href="https://github.com/caesar0301/http-sniffer">View the Project on GitHub <small>caesar0301/http-sniffer</small></a></p>
+        <ul>
+          <li><a href="https://github.com/caesar0301/http-sniffer/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/caesar0301/http-sniffer/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/caesar0301/http-sniffer">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="http-sniffer" class="anchor" href="#http-sniffer" aria-hidden="true"><span class="octicon octicon-link"></span></a>http-sniffer</h1>
+
+<p><a href="https://travis-ci.org/caesar0301/http-sniffer"><img src="https://travis-ci.org/caesar0301/http-sniffer.svg" alt="Build Status"></a></p>
+
+<p>A multi-threading tool to sniff HTTP header records beyond TCP flow statistics. </p>
+
+<h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features</h2>
+
+<ul>
+<li>Support both offline PCAP file and live NIC sniffing</li>
+<li>Perform multi-threading process, whereby the tool gets higher performance in face of big tarffic volume</li>
+<li>Export statistics of TCP flows</li>
+<li>Export HTTP request/response pairs if they are present in the TCP flow</li>
+<li>Support JSON format output</li>
+</ul>
+
+<h2>
+<a id="dependencis" class="anchor" href="#dependencis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencis</h2>
+
+<p>The <code>http-sniffer</code> depends sereval libraries:</p>
+
+<ul>
+<li>
+<a href="http://www.tcpdump.org/">libpcap</a> to extract traffic packet,</li>
+<li>
+<a href="https://github.com/json-c/json-c">json-c</a> to support json parsing, and</li>
+<li>
+<a href="http://www.scons.org/">scons</a> to build the project.</li>
+</ul>
+
+<p>A known issue about <code>json-c</code> is the unused params errors on linux platform,
+you can use an <a href="https://github.com/phalcon/json-c">alternative</a> to solve it.
+You may also need to export linked library path which includes <code>libjson-c.*</code></p>
+
+<p>export LD_LIBRARY_PATH=/usr/local/lib</p>
+
+<h2>
+<a id="how-to-build" class="anchor" href="#how-to-build" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to Build</h2>
+
+<ul>
+<li>
+<p>Run <code>scons</code> in root folder to compile:</p>
+
+<pre><code>$cd http-sniffer
+$scons
+</code></pre>
+</li>
+<li><p>The excutive file lies in foder <code>bin/</code>.</p></li>
+</ul>
+
+<h2>
+<a id="output-format" class="anchor" href="#output-format" aria-hidden="true"><span class="octicon octicon-link"></span></a>Output Format</h2>
+
+<p>Each line represents a TCP flow and its HTTP messages in json format, as 
+is encoded by JSON format which convinient for furture processing.</p>
+
+<div class="highlight highlight-json"><pre>   { <span class="pl-s1"><span class="pl-pds">"</span>time_local<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>2012-04-23T13:50:09<span class="pl-pds">"</span></span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>saddr<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>192.168.1.4<span class="pl-pds">"</span></span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>daddr<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>192.168.1.5<span class="pl-pds">"</span></span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>sport<span class="pl-pds">"</span></span>: <span class="pl-c1">45753</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>dport<span class="pl-pds">"</span></span>: <span class="pl-c1">80</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>time_syn<span class="pl-pds">"</span></span>: <span class="pl-c1">1335160209.417475</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>time_first_byte<span class="pl-pds">"</span></span>: <span class="pl-c1">1335160209.452336</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>time_last_byte<span class="pl-pds">"</span></span>: <span class="pl-c1">1335160209.488276</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>rtt<span class="pl-pds">"</span></span>: <span class="pl-c1">248</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>src_packets<span class="pl-pds">"</span></span>: <span class="pl-c1">4</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>dst_packets<span class="pl-pds">"</span></span>: <span class="pl-c1">4</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>src_bytes<span class="pl-pds">"</span></span>: <span class="pl-c1">521</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>dst_bytes<span class="pl-pds">"</span></span>: <span class="pl-c1">257</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>http_pair_count<span class="pl-pds">"</span></span>: <span class="pl-c1">1</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>force_closed<span class="pl-pds">"</span></span>: <span class="pl-c1">0</span>, 
+   <span class="pl-s1"><span class="pl-pds">"</span>http_pairs<span class="pl-pds">"</span></span>: [ 
+    { 
+     <span class="pl-s1"><span class="pl-pds">"</span>request<span class="pl-pds">"</span></span>: { 
+      <span class="pl-s1"><span class="pl-pds">"</span>time_first_byte<span class="pl-pds">"</span></span>: <span class="pl-c1">1335160209.452336</span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>time_last_byte<span class="pl-pds">"</span></span>: <span class="pl-c1">1335160209.452336</span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>bytes_transfered<span class="pl-pds">"</span></span>: <span class="pl-c1">521</span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>http_version<span class="pl-pds">"</span></span>: <span class="pl-c1">1</span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>method<span class="pl-pds">"</span></span>: <span class="pl-c1">1</span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>host<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>s1.bdstatic.com<span class="pl-pds">"</span></span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>uri<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span><span class="pl-cce">\/</span>r<span class="pl-cce">\/</span>www<span class="pl-cce">\/</span>img<span class="pl-cce">\/</span>i-1.0.0.png<span class="pl-pds">"</span></span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>referer<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>http:<span class="pl-cce">\/\/</span>www.baidu.com<span class="pl-cce">\/</span><span class="pl-pds">"</span></span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>user_agent<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>Mozilla<span class="pl-cce">\/</span>5.0<span class="pl-pds">"</span></span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>accept<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>image<span class="pl-cce">\/</span>png,image<span class="pl-cce">\/</span>*;q=0.8,*<span class="pl-cce">\/</span>*;q=0.5<span class="pl-pds">"</span></span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>accept_encoding<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>gzip,deflate<span class="pl-pds">"</span></span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>accept_language<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>en-us,en;q=0.5<span class="pl-pds">"</span></span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>accept_charset<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>ISO-8859-1,utf-8;q=0.7,*;q=0.7<span class="pl-pds">"</span></span>}, 
+     <span class="pl-s1"><span class="pl-pds">"</span>response<span class="pl-pds">"</span></span>: {
+      <span class="pl-s1"><span class="pl-pds">"</span>time_first_byte<span class="pl-pds">"</span></span>: <span class="pl-c1">1335160209.488260</span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>time_last_byte<span class="pl-pds">"</span></span>: <span class="pl-c1">1335160209.488260</span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>bytes_transfered<span class="pl-pds">"</span></span>: <span class="pl-c1">257</span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>http_version<span class="pl-pds">"</span></span>: <span class="pl-c1">1</span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>status<span class="pl-pds">"</span></span>: <span class="pl-c1">304</span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>server<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>JSP<span class="pl-cce">\/</span>1.0.18<span class="pl-pds">"</span></span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>date<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>Mon, 23 Apr 2012 06:02:23 GMT<span class="pl-pds">"</span></span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>expires<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>Tue, 29 Mar 2022 09:34:06 GMT<span class="pl-pds">"</span></span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>etag<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span><span class="pl-cce">\"</span>25f-4a6ebc21c42c0<span class="pl-cce">\"</span><span class="pl-pds">"</span></span>, 
+      <span class="pl-s1"><span class="pl-pds">"</span>last_modified<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>Thu, 30 Jun 2011 10:56:51 GMT<span class="pl-pds">"</span></span>} 
+    } ] 
+   }</pre></div>
+
+<h2>
+<a id="about-author" class="anchor" href="#about-author" aria-hidden="true"><span class="octicon octicon-link"></span></a>About Author</h2>
+
+<p>Xiaming Chen (<a href="mailto:chenxm35@gmail.com">chenxm35@gmail.com</a>)</p>
+
+<p>SJTU, Shanghai, China</p>
+
+<p>2012-04-01</p>
+      </section>
+    </div>
+    <footer>
+      <p>Project maintained by <a href="https://github.com/caesar0301">caesar0301</a></p>
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+    </footer>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
