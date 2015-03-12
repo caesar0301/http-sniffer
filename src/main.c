@@ -1,6 +1,3 @@
-/*
- * Main.c
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,8 +11,9 @@
 #include "packet.h"
 #include "flow.h"
 #include "util.h"
+#include "io.h"
 
-int GP_CAP_FIN = 0; /* Flag for offline pcap sniffing */
+int GP_CAP_FIN = 0; /* Flag for offline PCAP sniffing */
 
 #ifndef DEBUGGING
 #define DEBUGGING 0
@@ -209,8 +207,7 @@ process_flow_queue(const char* dump_file){
 				file_name = file_name_buf;
 			}
 
-			flow_dump_file_json(flow, file_name);
-			//flow_dump_file_plain(flow, file_name);	// Fault
+			save_flow_json(flow, file_name);
 
 			flow_print(flow);
 			flow_free(flow);
