@@ -163,8 +163,11 @@ process_packet_queue(void){
 		if (pkt != NULL){
 			flow_hash_add_packet(pkt);
 			continue;
-		} else if ( GP_CAP_FIN == 1 )
+		} else if ( GP_CAP_FIN == 1 ) {
 			break;
+		} else {
+			nanosleep((const struct timespec[]){{0, 100000000L}}, NULL);
+		}
 	}
 	pthread_exit("Packet processing finished.\n");
 	return 0;
@@ -215,6 +218,8 @@ process_flow_queue(const char* dump_file){
 			continue;
 		} else if (GP_CAP_FIN == 1) {
 			break;
+		} else {
+			nanosleep((const struct timespec[]){{0, 100000000L}}, NULL);
 		}
 	}
 	pthread_exit("Flow processing finished.\n");
@@ -275,6 +280,8 @@ capture_main(const char* interface, void (*pkt_handler)(void*), int livemode){
 		} else if ( livemode==0 ) {
 			GP_CAP_FIN = 1;
 			break;
+		} else {
+			nanosleep((const struct timespec[]){{0, 100000000L}}, NULL);
 		}
 	}
 
