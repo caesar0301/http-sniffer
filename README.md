@@ -3,7 +3,9 @@ http-sniffer
 
 [![Build Status](https://travis-ci.org/caesar0301/http-sniffer.svg)](https://travis-ci.org/caesar0301/http-sniffer)
 
-A multi-threading tool to sniff HTTP header records beyond TCP flow statistics. 
+A multi-threading tool to sniff HTTP header records beyond TCP flow statistics.
+
+MIT licensed.
 
 Features
 ------------
@@ -39,7 +41,7 @@ How to Build
 
         $cd http-sniffer
         $scons
-        
+
 * The excutive file lies in foder `bin/`.
 
 
@@ -96,6 +98,7 @@ is encoded by JSON format which convinient for furture processing.
     } ] 
    }
 ```
+
 
 About Author
 ------------
