@@ -20,7 +20,7 @@ Features
 Dependencis
 ------------
 
-The `http-sniffer` depends sereval libraries:
+The `http-sniffer` depends on other utilities:
 
   * [libpcap](http://www.tcpdump.org/) to extract traffic packet,
   * [json-c](https://github.com/json-c/json-c) to support json parsing, and
