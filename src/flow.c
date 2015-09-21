@@ -648,9 +648,11 @@ flow_extract_http(flow_t *f){
 					//assert( seq->nxt_seq != 0 );
 					if(seq->nxt_seq != 0){
 						found_http->rsp_total_len = seq->nxt_seq - first_seq->seq;
-						//printf("%d,%d", found_http->rsp_total_len, found_http->response_header->hdlen);
-						//assert(found_http->rsp_total_len >= found_http->response_header->hdlen);
 						found_http->rsp_body_len = found_http->rsp_total_len - found_http->response_header->hdlen;
+						if (found_http->rsp_body_len < 0)
+						{
+						    found_http->rsp_body_len = -1;
+						}
 					}
 					/*Update flow's last byte time.*/
 					if ((seq->cap_sec > f->lb_sec) || (seq->cap_sec == f->lb_sec && seq->cap_usec > f->lb_usec)){
@@ -716,8 +718,11 @@ flow_extract_http(flow_t *f){
 					//assert( seq->nxt_seq != 0 );
 					if(seq->nxt_seq != 0){
 						found_http->rsp_total_len = seq->nxt_seq - first_seq->seq;	
-						//assert(found_http->rsp_total_len >= found_http->response_header->hdlen);
 						found_http->rsp_body_len = found_http->rsp_total_len - found_http->response_header->hdlen;
+						if (found_http->rsp_body_len < 0)
+                        {
+                            found_http->rsp_body_len = -1;
+                        }
 					}
 					/*Update flow's last byte time.*/
 					if ((seq->cap_sec > f->lb_sec) || (seq->cap_sec == f->lb_sec && seq->cap_usec > f->lb_usec)){
