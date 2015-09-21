@@ -233,10 +233,24 @@ http_request_free(request_t *r)
 		free(r->user_agent);
 	if(r->referer != NULL)
 		free(r->referer);
+	if(r->connection != NULL)
+	    free(r->connection);
+    if(r->accept != NULL)
+        free(r->accept);
+    if(r->accept_encoding != NULL)
+        free(r->accept_encoding);
+	if(r->accept_language != NULL)
+        free(r->accept_language);
+    if(r->accept_charset != NULL)
+        free(r->accept_charset);
+    if(r->cookie != NULL)
+        free(r->cookie);
 	if(r->content_type != NULL)
 		free(r->content_type);
 	if(r->content_encoding != NULL)
 		free(r->content_encoding);
+	if(r->content_length != NULL)
+        free(r->content_length);
 	free(r);
 }
 
@@ -261,7 +275,10 @@ http_response_free(response_t *r)
 		free(r->content_type);
 	if(r->content_encoding != NULL)
 		free(r->content_encoding);
-
+	if(r->content_length != NULL)
+        free(r->content_length);
+    if(r->age != NULL)
+        free(r->age);
 	free(r);
 }
 

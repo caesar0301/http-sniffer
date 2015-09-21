@@ -83,7 +83,7 @@ typedef struct _http_st_code http_st_code;
 struct _http_st_code
 {
     int num;          	/* status code number */
-    http_status st;   /* status */
+    http_status st;     /* status */
 };
 
 extern http_st_code HTTP_STATUS_CODE_ARRAY[];	// defined in http.c
@@ -220,33 +220,20 @@ struct _http_pair_t
 	http_pair_t	*next;
 };
 
-char*
-IsRequest(const char *p, const int datalen);	/* If the packet is carrying HTTP request data */
-char*
-IsResponse(const char *p, const int datalen);	/* If the packet is carrying HTTP response data */
-BOOL
-IsHttpPacket(const char *p, const int datalen);	/* If the packet is carrying HTTP(request or response) data */
+char* IsRequest(const char *p, const int datalen);	    /* If the packet carries HTTP request data */
+char* IsResponse(const char *p, const int datalen);	    /* If the packet carries HTTP response data */
+BOOL IsHttpPacket(const char *p, const int datalen);	/* If the packet carries HTTP(request or response) data */
 
-http_pair_t*
-http_new(void);						/* Create a new http_pair_t object */
-void
-http_free(http_pair_t *h);				/* Free a http_pair_t object */
-request_t*
-http_request_new(void);				/* Create a new request_t object */
-void
-http_request_free(request_t *req);	/* Free a request_t object */
-response_t*
-http_response_new(void);			/* Create a new response_t object */
-void
-http_response_free(response_t *rsp);			/* Free a response_t object */
-int
-http_add_request(http_pair_t *h, request_t *req);	/* Add a request_t object to http_pair_t request chain */
-int
-http_add_response(http_pair_t *h, response_t *rsp);	/* Add a response_t object to http_pair_t response chain */
+http_pair_t* http_new(void);						    /* Create a new http_pair_t object */
+void http_free(http_pair_t *h);			                /* Free a http_pair_t object */
+request_t* http_request_new(void);				        /* Create a new request_t object */
+void http_request_free(request_t *req);	                /* Free a request_t object */
+response_t* http_response_new(void);			        /* Create a new response_t object */
+void http_response_free(response_t *rsp);			    /* Free a response_t object */
+int http_add_request(http_pair_t *h, request_t *req);	/* Add a request_t object to http_pair_t request chain */
+int http_add_response(http_pair_t *h, response_t *rsp);	/* Add a response_t object to http_pair_t response chain */
 
-int
-http_parse_request(request_t *request, const char *data, const char *dataend);		/* Parse the packet and store in a request_t object */
-int
-http_parse_response(response_t *response, const char *data, const char *dataend);	/* Parse the packet and store in a response_t object */
+int http_parse_request(request_t *request, const char *data, const char *dataend);		/* Parse the packet and store in a request_t object */
+int http_parse_response(response_t *response, const char *data, const char *dataend);	/* Parse the packet and store in a response_t object */
 
 #endif /* __HTTP_H__ */

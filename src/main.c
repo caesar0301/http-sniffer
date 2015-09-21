@@ -59,24 +59,22 @@ packet_preprocess(const char *raw_data, const struct pcap_pkthdr *pkthdr)
 	pkt->cap_usec = pkthdr->ts.tv_usec;
 	pkt->raw_len = pkthdr->caplen;
 
-	/* Parse ethernet header */
+	/* Parse ethernet header and check IP payload */
 	eth_hdr = packet_parse_ethhdr(cp);
-	/* Is IP...? */
 	if(eth_hdr->ether_type != 0x0800){
 		free_ethhdr(eth_hdr);
 		packet_free(pkt);
 		return NULL;
 	}
 
-	/* Parse IP header */
-	cp = cp+sizeof(ethhdr);
+	/* Parse IP header and check TCP payload */
+	cp = cp + sizeof(ethhdr);
 	ip_hdr = packet_parse_iphdr(cp);
 	pkt->saddr = ip_hdr->saddr;
 	pkt->daddr = ip_hdr->daddr;
 	pkt->ip_hl = (ip_hdr->ihl) << 2;	/* bytes */
 	pkt->ip_tol = ip_hdr->tot_len;
 	pkt->ip_pro = ip_hdr->protocol;
-	/* Is TCP...? */
 	if(pkt->ip_pro != 0x06){
 		free_ethhdr(eth_hdr);
 		free_iphdr(ip_hdr);
