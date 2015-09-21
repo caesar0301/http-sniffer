@@ -17,7 +17,7 @@ def printCheck(lib_path, libname):
 
 
 # Set compiling environment
-env = Environment(CCFLAGS='-w')
+env = Environment(CCFLAGS='-w -g')
 lib_path = ['.', '/usr/local/lib', '/usr/lib', '/usr/lib/x86_64-linux-gnu/']
 printCheck(lib_path, 'pthread')
 printCheck(lib_path, 'pcap')
