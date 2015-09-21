@@ -8,6 +8,49 @@
 #include <unistd.h>
 
 #include "flow.h"
+#include "io.h"
+
+
+/* Output flow's brief to stdout */
+void
+flow_print(const flow_t *flow){
+	time_t raw_time;
+	struct tm *timeinfo = NULL;
+	char time_buf[20];
+	/*Convert IP addr */
+	char *saddr = malloc(sizeof("aaa.bbb.ccc.ddd"));
+	char *daddr = malloc(sizeof("aaa.bbb.ccc.ddd"));
+	strncpy(saddr, ip_ntos(flow->socket.saddr), sizeof("aaa.bbb.ccc.ddd"));
+	strncpy(daddr, ip_ntos(flow->socket.daddr), sizeof("aaa.bbb.ccc.ddd"));
+	/* Get local time */
+	time( &raw_time );
+	timeinfo = localtime( &raw_time );
+	memset(time_buf, 0, sizeof(time_buf));
+	strftime(time_buf, sizeof(time_buf), "%Y%m%d %H:%M:%S", timeinfo);
+	/* Print flow information. */
+	printf("\n[%s]%s:%d-->%s:%d %d.%d %d.%d %d.%d %d %d/%d %d/%d %d %d\n",
+			time_buf,
+			saddr,
+			flow->socket.sport,
+			daddr,
+			flow->socket.dport,
+			(int)flow->syn_sec,
+			(int)flow->syn_usec,
+			(int)flow->fb_sec,
+			(int)flow->fb_usec,
+			(int)flow->lb_sec,
+			(int)flow->lb_usec,
+			(int)flow->rtt,
+			flow->pkts_src,
+			flow->pkts_dst,
+			flow->payload_src,
+			flow->payload_dst,
+			flow->http_cnt,
+			(flow->close == FORCED_CLOSE) ? 1 : 0);
+	free(saddr);
+	free(daddr);
+}
+
 
 /**
  * Dump a flow_t object into a file
