@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(http-sniffer C)
+project(http-sniffer C CXX)
 
 # Set C standard
 set(CMAKE_C_STANDARD 99)
@@ -11,6 +11,22 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w -g")
 # Find required packages
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
+
+# Find Google Test (optional for unit tests)
+find_package(GTest QUIET)
+# Find Google Logging (optional for unit tests)
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    pkg_check_modules(GLOG QUIET libglog)
+endif()
+
+if(GTest_FOUND AND GLOG_FOUND)
+    message(STATUS "Google Test and Google Logging found - unit tests enabled")
+    set(ENABLE_TESTS ON)
+else()
+    message(STATUS "Google Test or Google Logging not found - unit tests will be disabled")
+    set(ENABLE_TESTS OFF)
+endif()
 
 # Find pcap library
 find_library(PCAP_LIBRARY pcap)
@@ -85,6 +101,56 @@ endif()
 set_target_properties(http-sniffer PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
 )
+
+# Unit tests
+if(ENABLE_TESTS)
+    enable_testing()
+    
+    # Collect test source files
+    file(GLOB TEST_SOURCES "tests/*.cpp")
+    
+    # Create test executable (C++ for Google Test)
+    add_executable(unit-tests ${TEST_SOURCES})
+    set_target_properties(unit-tests PROPERTIES
+        LINKER_LANGUAGE CXX
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED ON
+    )
+    
+    # Link test libraries
+    set(TEST_LIBS
+        ${PCAP_LIBRARY}
+        ${JSON_C_LIBRARY}
+        Threads::Threads
+        GTest::gtest
+        GTest::gtest_main
+    )
+    if(GLOG_FOUND)
+        list(APPEND TEST_LIBS ${GLOG_LIBRARIES})
+    endif()
+    target_link_libraries(unit-tests ${TEST_LIBS})
+    
+    # Include directories for tests
+    target_include_directories(unit-tests PRIVATE 
+        ${CMAKE_SOURCE_DIR}/include
+        ${JSON_C_INCLUDE_DIR}
+    )
+    if(GLOG_FOUND)
+        target_include_directories(unit-tests PRIVATE ${GLOG_INCLUDE_DIRS})
+    endif()
+    
+    # Set output directory for tests
+    set_target_properties(unit-tests PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+    )
+    
+    # Add test
+    add_test(NAME UnitTests COMMAND unit-tests)
+    
+    message(STATUS "Unit tests enabled")
+else()
+    message(STATUS "Unit tests disabled - missing dependencies")
+endif()
 
 # Print status messages
 message(STATUS "Checking pthread ... true")

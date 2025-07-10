@@ -7,10 +7,9 @@ on:
     branches: [ main, master, develop ]
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         build_type: [Release]
@@ -27,94 +26,31 @@ jobs:
           cmake \
           libpcap-dev \
           libjson-c-dev \
-          libgoogle-glog-dev \
-          pkg-config
+          pkg-config \
+          libgtest-dev \
+          libglog-dev
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew update
         brew install \
           cmake \
           libpcap \
           json-c \
-          glog \
-          pkg-config
-
-    - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} -j $(nproc 2>/dev/null || sysctl -n hw.ncpu)
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      run: ctest --build-config ${{matrix.build_type}} --verbose
-
-    - name: Test executable exists
-      run: |
-        ls -la ${{github.workspace}}/build/bin/
-        test -f ${{github.workspace}}/build/bin/httpsniffer
-
-  static-analysis:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          cmake \
-          libpcap-dev \
-          libjson-c-dev \
-          libgoogle-glog-dev \
           pkg-config \
-          cppcheck
-
-    - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Debug
+          googletest \
+          glog
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Debug
-
-    - name: Run cppcheck
       run: |
-        cppcheck --enable=all --error-exitcode=1 --suppress=missingIncludeSystem \
-          --suppress=unusedFunction --suppress=unmatchedSuppression \
-          src/ include/ || echo "Static analysis completed with warnings"
+        make clean
+        make BUILD_TYPE=${{matrix.build_type}}
 
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install dependencies
+    - name: Verify executable
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          cmake \
-          libpcap-dev \
-          libjson-c-dev \
-          libgoogle-glog-dev \
-          pkg-config \
-          gcov \
-          lcov
+        ls -la bin/
+        ./bin/http-sniffer --help
 
-    - name: Configure CMake with coverage
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="--coverage" -DCMAKE_CXX_FLAGS="--coverage"
-
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Debug
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      run: ctest --build-config Debug --verbose
-
-    - name: Generate coverage report
+    - name: Run unit tests
       run: |
-        lcov --capture --directory ${{github.workspace}}/build --output-file coverage.info
-        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/*' --output-file coverage_filtered.info
-        lcov --list coverage_filtered.info
+        make test

@@ -1,7 +1,7 @@
 # Makefile for http-sniffer using CMake
 # Merged functionality from build.sh
 
-.PHONY: all clean debug release install uninstall help nfm clean-build
+.PHONY: all clean debug release install uninstall help nfm clean-build test test-debug
 
 # Default values
 BUILD_TYPE ?= Release
@@ -50,6 +50,17 @@ nfm-clean: clean
 	@echo "Performing NFM clean build..."
 	@$(MAKE) nfm
 
+# Run unit tests
+test:
+	@echo "Running unit tests..."
+	@cd build && ctest --verbose
+
+# Run unit tests with debug build
+test-debug:
+	@echo "Building and running unit tests in debug mode..."
+	@$(MAKE) debug
+	@cd build && ctest --verbose
+
 # Install (if supported by CMake)
 install:
 	@echo "Installing..."
@@ -73,6 +84,8 @@ help:
 	@echo "  clean-build  - Clean then build in release mode"
 	@echo "  debug-clean  - Clean then build in debug mode"
 	@echo "  nfm-clean    - Clean then build with NFM support"
+	@echo "  test         - Run unit tests"
+	@echo "  test-debug   - Build debug and run unit tests"
 	@echo "  install      - Install the application"
 	@echo "  uninstall    - Uninstall the application"
 	@echo "  help         - Show this help message"
