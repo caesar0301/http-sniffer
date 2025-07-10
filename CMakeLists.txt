@@ -106,11 +106,12 @@ set_target_properties(http-sniffer PROPERTIES
 if(ENABLE_TESTS)
     enable_testing()
     
-    # Collect test source files
+    # Collect test source files and application source files
     file(GLOB TEST_SOURCES "tests/*.cpp")
+    file(GLOB APP_SOURCES "src/*.c")
     
     # Create test executable (C++ for Google Test)
-    add_executable(unit-tests ${TEST_SOURCES})
+    add_executable(unit-tests ${TEST_SOURCES} ${APP_SOURCES})
     set_target_properties(unit-tests PROPERTIES
         LINKER_LANGUAGE CXX
         CXX_STANDARD 11
