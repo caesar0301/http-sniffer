@@ -1,0 +1,5 @@
+if(EXISTS "/workspace/build/tests/httpsniffer_tests[1]_tests.cmake")
+  include("/workspace/build/tests/httpsniffer_tests[1]_tests.cmake")
+else()
+  add_test(httpsniffer_tests_NOT_BUILT httpsniffer_tests_NOT_BUILT)
+endif()

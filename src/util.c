@@ -2,6 +2,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <arpa/inet.h>
 
 #include "util.h"
 
@@ -18,14 +21,20 @@ void *check_malloc(unsigned long size)
 }
 
 char *ip_ntos(u_int32_t n){
-	static char buf[sizeof("aaa.bbb.ccc.ddd")];
-	memset(buf, '\0', 15);
+	char *buf = malloc(sizeof("aaa.bbb.ccc.ddd"));
+	if (buf == NULL) {
+		printf("Out of memory!\n");
+		exit(1);
+	}
+	memset(buf, '\0', 16);
 
+	// Convert from network byte order to host byte order for processing
+	u_int32_t host_n = ntohl(n);
 	sprintf(buf, "%d.%d.%d.%d",
-			(n & 0xff000000) >> 24,
-			(n & 0x00ff0000) >> 16,
-			(n & 0x0000ff00) >> 8,
-			(n & 0x000000ff) >> 0);
+			(int)((host_n >> 24) & 0xff),
+			(int)((host_n >> 16) & 0xff),
+			(int)((host_n >> 8) & 0xff),
+			(int)(host_n & 0xff));
 
 	return buf;
 }
@@ -116,6 +125,7 @@ u_int32_t ip_ston(char *cp){
 			val |= (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8);
 			break;
 	}
-	return val;
+	// Convert to network byte order before returning
+	return htonl(val);
 
 }

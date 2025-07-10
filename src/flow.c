@@ -397,7 +397,7 @@ flow_extract_http(flow_t *f){
 		}
 		
 		/*Search the FIN sequence in sequence queue.*/
-		if(seq->th_flags & TH_FIN == TH_FIN){
+		if((seq->th_flags & TH_FIN) == TH_FIN){
 			src_fin_seq = seq;
 			break;
 		}
@@ -407,7 +407,7 @@ flow_extract_http(flow_t *f){
 	seq = f->order->dst;
 	while(seq != NULL){
 		/*Search the FIN sequence in sequence queue.*/
-		if(seq->th_flags & TH_FIN == TH_FIN){
+		if((seq->th_flags & TH_FIN) == TH_FIN){
 			dst_fin_seq = seq;
 			break;
 		}

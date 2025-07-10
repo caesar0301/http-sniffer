@@ -266,7 +266,7 @@ flow_scrubber(const int timeout)
 			flow_next = flow->next;
 
 			gettimeofday(&tv, &tz);
-			delta = abs(tv.tv_sec - flow->last_action_sec);
+			delta = labs(tv.tv_sec - flow->last_action_sec);
 
 			if (delta > timeout){
 				num++;

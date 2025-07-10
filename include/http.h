@@ -15,8 +15,7 @@
 /*
  * HTTP response status number.
  */
-typedef enum _http_status http_status;
-enum _http_status
+typedef enum _http_status
 {
     HTTP_ST_100=100,   /**< Continue */
     HTTP_ST_101,       /**< Switching Protocols */
@@ -74,7 +73,7 @@ enum _http_status
     HTTP_ST_507=507,   /**< Insufficient Storage */
     HTTP_ST_599=599,   /**< Server Error - Others */
     HTTP_ST_NONE
-};
+} http_status;
 
 /*
  * HTTP status structure.
@@ -91,8 +90,7 @@ extern http_st_code HTTP_STATUS_CODE_ARRAY[];	// defined in http.c
 /*
  * HTTP methods.
  */
-typedef enum _http_mthd http_mthd;
-enum _http_mthd
+typedef enum _http_mthd
 {
     HTTP_MT_OPTIONS = 0, /* RFC2616 */
     HTTP_MT_GET,
@@ -135,20 +133,19 @@ enum _http_mthd
     HTTP_MT_UNSUBSCRIBE,
     HTTP_MT_ICY,               /* Shoutcast client (forse) */
     HTTP_MT_NONE
-};
+} http_mthd;
 
 extern char *HTTP_METHOD_STRING_ARRAY[];	// defined in http.c
 
 /*
  * HTTP version.
  */
-typedef enum _http_ver http_ver;
-enum _http_ver
+typedef enum _http_ver
 {
     HTTP_VER_1_0,
     HTTP_VER_1_1,
     HTTP_VER_NONE
-};
+} http_ver;
 
 /*
  * HTTP request header

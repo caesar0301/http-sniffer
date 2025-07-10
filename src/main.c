@@ -7,6 +7,7 @@
 #include <unistd.h>  /* getopt() */
 #include <netinet/in.h>
 #include <pcap.h>
+/* #include <glog/logging.h> -- Not compatible with C, will use printf for logging */
 
 #include "packet.h"
 #include "flow.h"
@@ -243,6 +244,14 @@ scrubbing_flow_htbl(void){
 }
 
 /**
+ * Wrapper function to call packet_queue_enq
+ */
+void
+packet_handler_wrapper(void* packet) {
+	packet_queue_enq((packet_t*)packet);
+}
+
+/**
  * Main capture function
  */
 int
@@ -256,7 +265,7 @@ capture_main(const char* interface, void (*pkt_handler)(void*), int livemode){
 	packet_t *packet = NULL;
 	extern int GP_CAP_FIN;
 
-	// printf("%s mode ...\n", livemode==1 ? "Online" : "Offline");
+	printf("[INFO] %s mode activated\n", (livemode==1 ? "Online" : "Offline"));
 
 	if ( livemode==1 ) {
 		cap = pcap_open_live(interface, 65535, 0, 1000, errbuf);
@@ -265,6 +274,7 @@ capture_main(const char* interface, void (*pkt_handler)(void*), int livemode){
 	}
 
 	if( cap == NULL) {
+		printf("[ERROR] Failed to open capture: %s\n", errbuf);
 		printf("%s\n",errbuf); exit(1);
 	}
 
@@ -297,6 +307,9 @@ int main(int argc, char *argv[]){
 	char* dumpfile = NULL;
 	char* tracefile = NULL;
 	int opt;
+
+	// Initialize logging (using printf for now)
+	printf("[INFO] Initializing http-sniffer\n");
 
 	// Parse arguments
 	while((opt = getopt(argc, argv, ":i:f:o:h")) != -1){
@@ -331,18 +344,23 @@ int main(int argc, char *argv[]){
 #endif
 
 	printf("Http-sniffer started: %s", ctime(&start));
+	printf("[INFO] Http-sniffer started\n");
 
 	/* Initialization of packet and flow data structures */
+	printf("[INFO] Initializing packet and flow data structures\n");
 	packet_queue_init();
 	flow_init();
 
 	/* Start packet receiving thread */
+	printf("[INFO] Starting packet receiving thread\n");
 	pthread_create(&job_pkt_q, NULL, (void*)process_packet_queue, NULL);
 
 	/* Start dead flow cleansing thread */
+	printf("[INFO] Starting dead flow cleansing thread\n");
 	pthread_create(&job_scrb_htbl, NULL, (void*)scrubbing_flow_htbl, NULL);
 
 	/* Start flow processing thread */
+	printf("[INFO] Starting flow processing thread\n");
 	pthread_create(&job_flow_q, NULL, (void*)process_flow_queue, dumpfile);
 
 #if DEBUGGING == 1
@@ -350,12 +368,16 @@ int main(int argc, char *argv[]){
 #endif
 
 	/* Start main capture in live or offline mode */
-	if (interface != NULL)
-		capture_main(interface, packet_queue_enq, 1);
-	else
-		capture_main(tracefile, packet_queue_enq, 0);
+	if (interface != NULL) {
+		printf("[INFO] Starting live capture on interface: %s\n", interface);
+		capture_main(interface, packet_handler_wrapper, 1);
+	} else {
+		printf("[INFO] Starting offline capture from file: %s\n", tracefile);
+		capture_main(tracefile, packet_handler_wrapper, 0);
+	}
 	
 	// Wait for all threads to finish
+	printf("[INFO] Waiting for threads to finish\n");
 	pthread_join(job_pkt_q, &thread_result);
 	pthread_join(job_flow_q, &thread_result);
 	pthread_join(job_scrb_htbl, &thread_result);
@@ -366,6 +388,7 @@ int main(int argc, char *argv[]){
 	
 	time(&end);
 	printf("Time elapsed: %d s\n", (int)(end - start));
+	printf("[INFO] Http-sniffer finished. Time elapsed: %d seconds\n", (int)(end - start));
 
 	return 0;
 }
