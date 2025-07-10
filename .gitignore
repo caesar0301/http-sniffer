@@ -1,10 +1,129 @@
+# Build directories
 bin/*
+lib/*
+build/
+out/
+dist/
+target/
+
+# IDE and editor files
 .idea/
 *.iml
-
-*.a
-*.dblite
-lib/*
-*.txt
-*.o
+.vscode/
+*.swp
+*.swo
 *~
+
+# Compiled object files
+*.o
+*.obj
+*.ko
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.x*.app
+*.ipa
+*.apk
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+# Database files
+*.dblite
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
+*.txt
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.cmake
+!CMakeLists.txt
+
+# SCons
+.sconsign.dblite
+.sconf_temp/
+
+# Coverage reports
+*.gcov
+*.gcda
+*.gcno
+coverage/
+*.info
+
+# Profiling
+*.prof
+gmon.out
+
+# Valgrind
+valgrind-out.txt
+
+# Doxygen
+doxygen/
+
+# Package files
+*.tar.gz
+*.tar.bz2
+*.zip
+*.rar
+
+# Backup files
+*~
+*.swp
+*.swo
+*#
+
+# Test files
+test_*
+*_test
+*.test
