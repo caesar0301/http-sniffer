@@ -311,11 +311,19 @@ int main(int argc, char *argv[]){
 	// Initialize logging (using printf for now)
 	printf("[INFO] Initializing http-sniffer\n");
 
+	// Check for --help before getopt processing
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--help") == 0) {
+			print_usage(argv[0]); 
+			return (0);
+		}
+	}
+
 	// Parse arguments
 	while((opt = getopt(argc, argv, ":i:f:o:h")) != -1){
 		switch(opt){
 		case 'h':
-			print_usage(argv[0]); return (1);
+			print_usage(argv[0]); return (0);
 		case 'i':
 			interface = optarg; break;
 		case 'o':
