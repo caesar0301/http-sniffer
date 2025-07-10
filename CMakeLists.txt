@@ -82,11 +82,14 @@ include_directories(${JSON_C_INCLUDE_DIR})
 # Collect all source files
 file(GLOB SOURCES "src/*.c")
 
-# Create executable
-add_executable(http-sniffer ${SOURCES})
+# Remove main.c from sources for the library
+list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/main.c")
 
-# Link libraries
-target_link_libraries(http-sniffer 
+# Create static library from C sources (excluding main.c)
+add_library(http-sniffer-lib STATIC ${SOURCES})
+
+# Link libraries to the static library
+target_link_libraries(http-sniffer-lib 
     ${PCAP_LIBRARY}
     ${JSON_C_LIBRARY}
     Threads::Threads
@@ -94,8 +97,14 @@ target_link_libraries(http-sniffer
 
 # Add NFM libraries if enabled
 if(ENABLE_NFM)
-    target_link_libraries(http-sniffer ${NFM_LIBRARIES})
+    target_link_libraries(http-sniffer-lib ${NFM_LIBRARIES})
 endif()
+
+# Create executable with just main.c
+add_executable(http-sniffer "src/main.c")
+
+# Link the executable against the static library
+target_link_libraries(http-sniffer http-sniffer-lib)
 
 # Set output directory
 set_target_properties(http-sniffer PROPERTIES
@@ -119,9 +128,7 @@ if(ENABLE_TESTS)
     
     # Link test libraries
     set(TEST_LIBS
-        ${PCAP_LIBRARY}
-        ${JSON_C_LIBRARY}
-        Threads::Threads
+        http-sniffer-lib
         GTest::gtest
         GTest::gtest_main
     )
