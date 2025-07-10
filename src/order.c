@@ -4,6 +4,8 @@
  *  Created on: Jun 14, 2011
  *      Author: chenxm
  */
+#include <string.h>
+#include <stdlib.h>
 #include "packet.h"
 #include "util.h"
 #include "order.h"
