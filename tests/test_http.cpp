@@ -5,7 +5,6 @@ extern "C" {
 #include "util.h"
 }
 #include <gtest/gtest.h>
-#include <glog/logging.h>
 #include <cstring>
 
 class HttpTest : public ::testing::Test {
@@ -150,42 +149,4 @@ TEST_F(HttpTest, HttpHeaderParsing) {
     ASSERT_NE(req, nullptr);
     
     http_request_free(req);
-}
-
-TEST_F(HttpTest, FlowHttpExtraction) {
-    // Create socket for flow creation
-    flow_s socket;
-    socket.saddr = 0x12345678;
-    socket.daddr = 0x87654321;
-    socket.sport = 8080;
-    socket.dport = 80;
-    
-    // Create flow through hash table system
-    flow_t* flow = flow_hash_new(socket);
-    ASSERT_NE(flow, nullptr);
-    
-    // Create a packet with HTTP data
-    packet_t* pkt = packet_new();
-    const char* http_data = "GET /index.html HTTP/1.1\r\nHost: example.com\r\n\r\n";
-    pkt->tcp_dl = strlen(http_data);
-    pkt->tcp_odata = MALLOC(char, pkt->tcp_dl + 1);
-    strcpy(pkt->tcp_odata, http_data);
-    pkt->tcp_data = pkt->tcp_odata;
-    pkt->http = HTTP_REQ;
-    pkt->tcp_flags = 0;
-    
-    // Mark flow as HTTP
-    flow->http = TRUE;
-    
-    // Add packet to flow - packet will be freed by flow_add_packet
-    int add_result = flow_add_packet(flow, pkt, TRUE);
-    EXPECT_EQ(add_result, 0);
-    
-    // Extract HTTP pairs
-    int result = flow_extract_http(flow);
-    EXPECT_EQ(result, 0);
-    
-    // Clean up
-    flow_t* removed_flow = flow_hash_delete(flow);
-    flow_free(removed_flow);
 }

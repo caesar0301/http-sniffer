@@ -2,7 +2,6 @@ extern "C" {
 #include "util.h"
 }
 #include <gtest/gtest.h>
-#include <glog/logging.h>
 #include <cstring>
 #include <arpa/inet.h>
 

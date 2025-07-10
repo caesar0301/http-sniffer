@@ -31,6 +31,8 @@ make                # Standard build
 make debug          # Debug build
 make nfm            # With NFM support
 make clean-build    # Clean then build
+make test           # Run unit tests
+make test-debug     # Build debug and run tests
 ```
 
 ## Usage
@@ -101,6 +103,15 @@ make clean-build    # Clean then build
     ]
 }
 ```
+
+## Dependencies
+
+* [libpcap](http://www.tcpdump.org/) - Packet capture
+* [json-c](https://github.com/json-c/json-c) - JSON parsing
+* [CMake](https://cmake.org/) - Build system
+* [Google Test](https://github.com/google/googletest) - Unit testing (optional)
+
+**Note:** If you encounter `json-c` unused params errors on Linux, try the [alternative version](https://github.com/phalcon/json-c).
 
 ## Author
 

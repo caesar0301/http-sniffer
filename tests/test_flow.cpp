@@ -4,7 +4,6 @@ extern "C" {
 #include "util.h"
 }
 #include <gtest/gtest.h>
-#include <glog/logging.h>
 
 class FlowTest : public ::testing::Test {
 protected:

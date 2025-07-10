@@ -3,7 +3,6 @@ extern "C" {
 #include "util.h"
 }
 #include <gtest/gtest.h>
-#include <glog/logging.h>
 #include <arpa/inet.h>
 
 class PacketTest : public ::testing::Test {

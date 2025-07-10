@@ -14,17 +14,12 @@ find_package(Threads REQUIRED)
 
 # Find Google Test (optional for unit tests)
 find_package(GTest QUIET)
-# Find Google Logging (optional for unit tests)
-find_package(PkgConfig QUIET)
-if(PkgConfig_FOUND)
-    pkg_check_modules(GLOG QUIET libglog)
-endif()
 
-if(GTest_FOUND AND GLOG_FOUND)
-    message(STATUS "Google Test and Google Logging found - unit tests enabled")
+if(GTest_FOUND)
+    message(STATUS "Google Test found - unit tests enabled")
     set(ENABLE_TESTS ON)
 else()
-    message(STATUS "Google Test or Google Logging not found - unit tests will be disabled")
+    message(STATUS "Google Test not found - unit tests will be disabled")
     set(ENABLE_TESTS OFF)
 endif()
 
@@ -106,9 +101,10 @@ set_target_properties(http-sniffer PROPERTIES
 if(ENABLE_TESTS)
     enable_testing()
     
-    # Collect test source files and application source files
+    # Collect test source files and application source files (excluding main.c)
     file(GLOB TEST_SOURCES "tests/*.cpp")
     file(GLOB APP_SOURCES "src/*.c")
+    list(REMOVE_ITEM APP_SOURCES "${CMAKE_SOURCE_DIR}/src/main.c")
     
     # Create test executable (C++ for Google Test)
     add_executable(unit-tests ${TEST_SOURCES} ${APP_SOURCES})
@@ -119,26 +115,19 @@ if(ENABLE_TESTS)
     )
     
     # Link test libraries
-    set(TEST_LIBS
+    target_link_libraries(unit-tests 
         ${PCAP_LIBRARY}
         ${JSON_C_LIBRARY}
         Threads::Threads
         GTest::gtest
         GTest::gtest_main
     )
-    if(GLOG_FOUND)
-        list(APPEND TEST_LIBS ${GLOG_LIBRARIES})
-    endif()
-    target_link_libraries(unit-tests ${TEST_LIBS})
     
     # Include directories for tests
     target_include_directories(unit-tests PRIVATE 
         ${CMAKE_SOURCE_DIR}/include
         ${JSON_C_INCLUDE_DIR}
     )
-    if(GLOG_FOUND)
-        target_include_directories(unit-tests PRIVATE ${GLOG_INCLUDE_DIRS})
-    endif()
     
     # Set output directory for tests
     set_target_properties(unit-tests PROPERTIES

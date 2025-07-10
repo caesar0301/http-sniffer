@@ -27,8 +27,7 @@ jobs:
           libpcap-dev \
           libjson-c-dev \
           pkg-config \
-          libgtest-dev \
-          libgoogle-glog-dev
+          libgtest-dev
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
@@ -38,8 +37,7 @@ jobs:
           libpcap \
           json-c \
           pkg-config \
-          googletest \
-          glog
+          googletest
 
     - name: Build
       run: |
