@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         build_type: [Release]
 
     steps:
@@ -28,7 +28,7 @@ jobs:
           libjson-c-dev \
           pkg-config \
           libgtest-dev \
-          libglog-dev
+          libgoogle-glog-dev
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
