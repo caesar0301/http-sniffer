@@ -113,8 +113,14 @@ make test-debug     # Build debug and run tests
 
 **Note:** If you encounter `json-c` unused params errors on Linux, try the [alternative version](https://github.com/phalcon/json-c).
 
+
+
 ## Author
 
 Xiaming Chen <chenxm35@gmail.com>  
 SJTU, Shanghai, China
 2012-04-01
+
+## Trend
+
+[![Star History Chart](https://api.star-history.com/svg?repos=caesar0301/http-sniffer&type=Date)](https://star-history.com/#caesar0301/http-sniffer&Date)
